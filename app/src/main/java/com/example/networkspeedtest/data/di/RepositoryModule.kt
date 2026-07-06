@@ -1,6 +1,8 @@
 package com.example.networkspeedtest.data.di
 
+import com.example.networkspeedtest.data.repository.HistoryRepositoryImpl
 import com.example.networkspeedtest.data.repository.SpeedTestRepositoryImpl
+import com.example.networkspeedtest.domain.repository.HistoryRepository
 import com.example.networkspeedtest.domain.repository.SpeedTestRepository
 import dagger.Binds
 import dagger.Module
@@ -10,7 +12,7 @@ import javax.inject.Singleton
 
 /**
  * Mengikat interface repository (domain) ke implementasinya (data).
- * NetworkInfoRepository dan HistoryRepository akan ditambahkan di tahap 9 & 5.
+ * NetworkInfoRepository akan ditambahkan di tahap 9.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -21,4 +23,10 @@ abstract class RepositoryModule {
     abstract fun bindSpeedTestRepository(
         impl: SpeedTestRepositoryImpl,
     ): SpeedTestRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindHistoryRepository(
+        impl: HistoryRepositoryImpl,
+    ): HistoryRepository
 }
