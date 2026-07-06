@@ -53,7 +53,6 @@ androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navig
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 # --- Ditambahkan untuk Network Speed Test ---
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
