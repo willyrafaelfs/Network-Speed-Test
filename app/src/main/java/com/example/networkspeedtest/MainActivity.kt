@@ -6,7 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
-import com.example.networkspeedtest.presentation.speedtest.SpeedTestScreen
+import com.example.networkspeedtest.presentation.MainScreen
 import com.example.networkspeedtest.ui.theme.NetworkSpeedTestTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -17,7 +17,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             NetworkSpeedTestTheme {
-                SpeedTestScreen(modifier = Modifier.fillMaxSize())
+                MainScreen(modifier = Modifier.fillMaxSize())
             }
         }
     }
