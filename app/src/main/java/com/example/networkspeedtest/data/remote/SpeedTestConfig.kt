@@ -13,7 +13,9 @@ package com.example.networkspeedtest.data.remote
  * @param pingCount jumlah percobaan ping untuk menghitung jitter (tahap 4).
  */
 data class SpeedTestConfig(
-    val downloadUrl: String = "https://speed.cloudflare.com/__down?bytes=104857600", // 100 MB
+    // Maks ~90 MB per request di endpoint Cloudflare (di atas itu HTTP 403);
+    // engine mengulang request sampai batas waktu, jadi 50 MB sudah cukup.
+    val downloadUrl: String = "https://speed.cloudflare.com/__down?bytes=50000000", // 50 MB
     val uploadUrl: String = "https://speed.cloudflare.com/__up",
     val pingUrl: String = "https://speed.cloudflare.com/__down?bytes=0",
     val publicIpUrl: String = "https://api.ipify.org",
