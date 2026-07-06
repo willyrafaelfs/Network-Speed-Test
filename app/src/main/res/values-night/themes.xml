@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Window background gelap saat sistem dark mode, agar selaras dengan
+         colorScheme Compose (isSystemInDarkTheme) dan tidak ada latar putih yang tembus. -->
+    <style name="Theme.NetworkSpeedTest" parent="android:Theme.Material.NoActionBar" />
+</resources>

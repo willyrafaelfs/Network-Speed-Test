@@ -14,8 +14,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,6 +45,7 @@ import java.util.Locale
 /** Layar utama: memegang ViewModel dan meneruskan state ke content yang stateless. */
 @Composable
 fun SpeedTestScreen(
+    snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     viewModel: SpeedTestViewModel = hiltViewModel(),
 ) {
@@ -60,6 +59,7 @@ fun SpeedTestScreen(
 
     SpeedTestContent(
         state = state,
+        snackbarHostState = snackbarHostState,
         canReadWifiName = hasLocationPermission,
         onRequestLocationPermission = {
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -83,6 +83,7 @@ private fun hasFineLocation(context: android.content.Context): Boolean =
 @Composable
 private fun SpeedTestContent(
     state: SpeedTestUiState,
+    snackbarHostState: SnackbarHostState,
     canReadWifiName: Boolean,
     onRequestLocationPermission: () -> Unit,
     onStart: () -> Unit,
@@ -90,7 +91,6 @@ private fun SpeedTestContent(
     onErrorShown: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(state.errorMessage) {
         state.errorMessage?.let { message ->
             snackbarHostState.showSnackbar(message)
@@ -98,69 +98,64 @@ private fun SpeedTestContent(
         }
     }
 
-    Scaffold(
-        modifier = modifier,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
-            Text(
-                text = "Network Speed Test",
-                style = MaterialTheme.typography.headlineMedium,
-            )
-            Text(
-                text = phaseLabel(state.phase),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+    // Tanpa Scaffold sendiri: background & snackbar disediakan Scaffold root (MainScreen).
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        Text(
+            text = "Network Speed Test",
+            style = MaterialTheme.typography.headlineMedium,
+        )
+        Text(
+            text = phaseLabel(state.phase),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
 
-            // Saat selesai, gauge menampilkan hasil download; selain itu kecepatan sesaat.
-            val gaugeSpeed = if (state.isFinished) {
-                state.downloadMbps ?: 0.0
-            } else {
-                state.currentSpeedMbps
+        // Saat selesai, gauge menampilkan hasil download; selain itu kecepatan sesaat.
+        val gaugeSpeed = if (state.isFinished) {
+            state.downloadMbps ?: 0.0
+        } else {
+            state.currentSpeedMbps
+        }
+        SpeedGauge(speedMbps = gaugeSpeed.toFloat())
+
+        // Progress fase saat ini (hanya saat berjalan).
+        if (state.isRunning) {
+            LinearProgressIndicator(
+                progress = { state.progressFraction },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        MetricsGrid(state = state)
+
+        NetworkInfoCard(
+            networkInfo = state.networkInfo,
+            canReadWifiName = canReadWifiName,
+            onRequestLocationPermission = onRequestLocationPermission,
+        )
+
+        Spacer(Modifier.height(4.dp))
+
+        if (state.isRunning) {
+            OutlinedButton(
+                onClick = onCancel,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Batal")
             }
-            SpeedGauge(speedMbps = gaugeSpeed.toFloat())
-
-            // Progress fase saat ini (hanya saat berjalan).
-            if (state.isRunning) {
-                LinearProgressIndicator(
-                    progress = { state.progressFraction },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            MetricsGrid(state = state)
-
-            NetworkInfoCard(
-                networkInfo = state.networkInfo,
-                canReadWifiName = canReadWifiName,
-                onRequestLocationPermission = onRequestLocationPermission,
-            )
-
-            Spacer(Modifier.height(4.dp))
-
-            if (state.isRunning) {
-                OutlinedButton(
-                    onClick = onCancel,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("Batal")
-                }
-            } else {
-                Button(
-                    onClick = onStart,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(if (state.isFinished) "Test Ulang" else "Mulai Test")
-                }
+        } else {
+            Button(
+                onClick = onStart,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(if (state.isFinished) "Test Ulang" else "Mulai Test")
             }
         }
     }
@@ -226,6 +221,7 @@ private fun SpeedTestContentPreview() {
                 downloadMbps = 87.4,
                 uploadMbps = 41.2,
             ),
+            snackbarHostState = remember { SnackbarHostState() },
             canReadWifiName = true,
             onRequestLocationPermission = {},
             onStart = {},

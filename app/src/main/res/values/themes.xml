@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!-- Window background terang untuk light mode; varian gelap ada di values-night. -->
     <style name="Theme.NetworkSpeedTest" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>
