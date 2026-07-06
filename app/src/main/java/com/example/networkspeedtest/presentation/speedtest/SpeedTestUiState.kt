@@ -1,5 +1,6 @@
 package com.example.networkspeedtest.presentation.speedtest
 
+import com.example.networkspeedtest.domain.model.NetworkInfo
 import com.example.networkspeedtest.domain.model.SpeedTestPhase
 
 /**
@@ -11,6 +12,7 @@ import com.example.networkspeedtest.domain.model.SpeedTestPhase
  * @param currentSpeedMbps kecepatan sesaat untuk animasi gauge.
  * @param progressFraction progres fase saat ini (0f..1f).
  * @param pingMs / jitterMs / downloadMbps / uploadMbps hasil tiap fase.
+ * @param networkInfo info koneksi terkini (jenis, SSID/operator, IP publik).
  * @param errorMessage pesan error bila test gagal; null bila tidak ada.
  */
 data class SpeedTestUiState(
@@ -22,6 +24,7 @@ data class SpeedTestUiState(
     val jitterMs: Double? = null,
     val downloadMbps: Double? = null,
     val uploadMbps: Double? = null,
+    val networkInfo: NetworkInfo = NetworkInfo.Unknown,
     val errorMessage: String? = null,
 ) {
     /** True bila satu sesi test sudah selesai penuh. */

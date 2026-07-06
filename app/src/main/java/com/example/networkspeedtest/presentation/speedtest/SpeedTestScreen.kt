@@ -26,11 +26,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.LaunchedEffect
 import com.example.networkspeedtest.domain.model.SpeedTestPhase
 import com.example.networkspeedtest.presentation.component.MetricCard
+import com.example.networkspeedtest.presentation.component.NetworkInfoCard
 import com.example.networkspeedtest.presentation.component.SpeedGauge
 import com.example.networkspeedtest.ui.theme.NetworkSpeedTestTheme
 import java.util.Locale
@@ -42,8 +51,19 @@ fun SpeedTestScreen(
     viewModel: SpeedTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val context = LocalContext.current
+    var hasLocationPermission by remember { mutableStateOf(hasFineLocation(context)) }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> hasLocationPermission = granted }
+
     SpeedTestContent(
         state = state,
+        canReadWifiName = hasLocationPermission,
+        onRequestLocationPermission = {
+            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        },
         onStart = viewModel::startTest,
         onCancel = viewModel::cancelTest,
         onErrorShown = viewModel::dismissError,
@@ -51,12 +71,20 @@ fun SpeedTestScreen(
     )
 }
 
+private fun hasFineLocation(context: android.content.Context): Boolean =
+    ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.ACCESS_FINE_LOCATION,
+    ) == PackageManager.PERMISSION_GRANTED
+
 /**
  * Content stateless — mudah di-preview dan diuji tanpa Hilt.
  */
 @Composable
 private fun SpeedTestContent(
     state: SpeedTestUiState,
+    canReadWifiName: Boolean,
+    onRequestLocationPermission: () -> Unit,
     onStart: () -> Unit,
     onCancel: () -> Unit,
     onErrorShown: () -> Unit,
@@ -110,6 +138,12 @@ private fun SpeedTestContent(
             }
 
             MetricsGrid(state = state)
+
+            NetworkInfoCard(
+                networkInfo = state.networkInfo,
+                canReadWifiName = canReadWifiName,
+                onRequestLocationPermission = onRequestLocationPermission,
+            )
 
             Spacer(Modifier.height(4.dp))
 
@@ -192,6 +226,8 @@ private fun SpeedTestContentPreview() {
                 downloadMbps = 87.4,
                 uploadMbps = 41.2,
             ),
+            canReadWifiName = true,
+            onRequestLocationPermission = {},
             onStart = {},
             onCancel = {},
             onErrorShown = {},

@@ -7,6 +7,7 @@ package com.example.networkspeedtest.data.remote
  * @param downloadUrl endpoint yang mengembalikan sejumlah besar byte.
  * @param uploadUrl endpoint yang menerima POST besar (body dibuang server).
  * @param pingUrl endpoint ringan untuk mengukur latency (dipakai tahap 4).
+ * @param publicIpUrl endpoint yang mengembalikan IP publik sebagai teks polos.
  * @param testDurationMillis lama tiap fase download/upload berjalan.
  * @param sampleIntervalMillis jarak antar emisi sampel real-time ke UI.
  * @param pingCount jumlah percobaan ping untuk menghitung jitter (tahap 4).
@@ -15,6 +16,7 @@ data class SpeedTestConfig(
     val downloadUrl: String = "https://speed.cloudflare.com/__down?bytes=104857600", // 100 MB
     val uploadUrl: String = "https://speed.cloudflare.com/__up",
     val pingUrl: String = "https://speed.cloudflare.com/__down?bytes=0",
+    val publicIpUrl: String = "https://api.ipify.org",
     val testDurationMillis: Long = 10_000L,
     val sampleIntervalMillis: Long = 300L,
     val pingCount: Int = 10,

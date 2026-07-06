@@ -2,10 +2,10 @@ package com.example.networkspeedtest.presentation.speedtest
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.networkspeedtest.domain.model.NetworkType
 import com.example.networkspeedtest.domain.model.SpeedTestPhase
 import com.example.networkspeedtest.domain.model.SpeedTestProgress
 import com.example.networkspeedtest.domain.model.SpeedTestResult
+import com.example.networkspeedtest.domain.usecase.GetNetworkInfoUseCase
 import com.example.networkspeedtest.domain.usecase.RunSpeedTestUseCase
 import com.example.networkspeedtest.domain.usecase.SaveTestResultUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -28,6 +30,7 @@ import javax.inject.Inject
 class SpeedTestViewModel @Inject constructor(
     private val runSpeedTest: RunSpeedTestUseCase,
     private val saveTestResult: SaveTestResultUseCase,
+    getNetworkInfo: GetNetworkInfoUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SpeedTestUiState())
@@ -35,11 +38,25 @@ class SpeedTestViewModel @Inject constructor(
 
     private var testJob: Job? = null
 
+    init {
+        // Amati info jaringan sepanjang hidup ViewModel dan cerminkan ke state.
+        getNetworkInfo()
+            .onEach { info -> _uiState.update { it.copy(networkInfo = info) } }
+            .launchIn(viewModelScope)
+    }
+
     /** Memulai sesi test baru. Diabaikan bila sedang berjalan. */
     fun startTest() {
         if (_uiState.value.isRunning) return
         testJob = viewModelScope.launch {
-            _uiState.value = SpeedTestUiState(isRunning = true, phase = SpeedTestPhase.PING)
+            // Reset metrik tapi pertahankan info jaringan yang sudah terdeteksi.
+            _uiState.update {
+                SpeedTestUiState(
+                    isRunning = true,
+                    phase = SpeedTestPhase.PING,
+                    networkInfo = it.networkInfo,
+                )
+            }
             runSpeedTest()
                 .catch { throwable ->
                     _uiState.update {
@@ -71,15 +88,15 @@ class SpeedTestViewModel @Inject constructor(
     fun dismissError() = _uiState.update { it.copy(errorMessage = null) }
 
     private suspend fun saveResult(progress: SpeedTestProgress) {
-        // Info jaringan (tipe/nama) menyusul di tahap 9; sementara diisi NONE.
+        val networkInfo = _uiState.value.networkInfo
         val result = SpeedTestResult(
             timestamp = System.currentTimeMillis(),
             pingMs = progress.pingMs ?: 0.0,
             jitterMs = progress.jitterMs ?: 0.0,
             downloadMbps = progress.downloadMbps ?: 0.0,
             uploadMbps = progress.uploadMbps ?: 0.0,
-            networkType = NetworkType.NONE,
-            networkName = null,
+            networkType = networkInfo.type,
+            networkName = networkInfo.networkName,
         )
         // Gagal simpan tidak boleh membuat UI hasil ikut gagal.
         runCatching { saveTestResult(result) }
