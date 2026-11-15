@@ -10,6 +10,9 @@ import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestResult
  *
  * NetworkType disimpan sebagai String (nama enum) agar tidak perlu TypeConverter;
  * konversi ke/dari domain ditangani mapper di bawah.
+ *
+ * Kolom latency saat beban ditambahkan di skema versi 2 dan nullable, karena hasil
+ * lama tidak punya data tersebut.
  */
 @Entity(tableName = "speed_test_results")
 data class SpeedTestResultEntity(
@@ -21,6 +24,8 @@ data class SpeedTestResultEntity(
     val uploadMbps: Double,
     val networkType: String,
     val networkName: String?,
+    val downloadLatencyMs: Double? = null,
+    val uploadLatencyMs: Double? = null,
 )
 
 /** Entity (Room) -> model domain. Enum tak dikenal jatuh ke OTHER agar aman. */
@@ -33,6 +38,8 @@ fun SpeedTestResultEntity.toDomain(): SpeedTestResult = SpeedTestResult(
     uploadMbps = uploadMbps,
     networkType = runCatching { NetworkType.valueOf(networkType) }.getOrDefault(NetworkType.OTHER),
     networkName = networkName,
+    downloadLatencyMs = downloadLatencyMs,
+    uploadLatencyMs = uploadLatencyMs,
 )
 
 /** Model domain -> entity (Room). */
@@ -45,4 +52,6 @@ fun SpeedTestResult.toEntity(): SpeedTestResultEntity = SpeedTestResultEntity(
     uploadMbps = uploadMbps,
     networkType = networkType.name,
     networkName = networkName,
+    downloadLatencyMs = downloadLatencyMs,
+    uploadLatencyMs = uploadLatencyMs,
 )
