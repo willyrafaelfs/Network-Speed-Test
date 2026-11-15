@@ -15,6 +15,7 @@ import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestPhase
  * @param progressFraction progres fase saat ini (0f..1f).
  * @param pingMs / jitterMs / downloadMbps / uploadMbps hasil tiap fase.
  * @param downloadLatencyMs / uploadLatencyMs latency saat beban selama download/upload.
+ * @param downloadTrace / uploadTrace titik kecepatan sesaat per fase, untuk grafik real-time.
  * @param networkInfo info koneksi terkini (jenis, SSID/operator, IP publik).
  * @param error penyebab test gagal; null bila tidak ada.
  */
@@ -29,6 +30,8 @@ data class SpeedTestUiState(
     val uploadMbps: Double? = null,
     val downloadLatencyMs: Double? = null,
     val uploadLatencyMs: Double? = null,
+    val downloadTrace: List<TracePoint> = emptyList(),
+    val uploadTrace: List<TracePoint> = emptyList(),
     val networkInfo: NetworkInfo = NetworkInfo.Unknown,
     val error: SpeedTestError? = null,
 ) {
@@ -39,3 +42,11 @@ data class SpeedTestUiState(
     val bufferbloatGrade: BufferbloatGrade?
         get() = pingMs?.let { BufferbloatGrade.of(it, downloadLatencyMs, uploadLatencyMs) }
 }
+
+/**
+ * Satu titik grafik throughput.
+ *
+ * @param progress posisi di dalam fase (0f..1f), menjadi sumbu X.
+ * @param mbps kecepatan sesaat pada titik tersebut.
+ */
+data class TracePoint(val progress: Float, val mbps: Float)
