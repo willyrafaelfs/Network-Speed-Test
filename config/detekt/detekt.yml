@@ -1,0 +1,32 @@
+# Override di atas konfigurasi default Detekt (buildUponDefaultConfig = true).
+# Hanya aturan yang perlu disesuaikan dengan konvensi Jetpack Compose yang ditulis di sini.
+
+naming:
+  FunctionNaming:
+    # Composable memakai PascalCase; nama test memakai kalimat dalam backtick.
+    ignoreAnnotated: ['Composable', 'Test']
+
+complexity:
+  LongParameterList:
+    # Composable stateless lazim menerima banyak state + callback.
+    ignoreAnnotated: ['Composable']
+  LongMethod:
+    ignoreAnnotated: ['Composable']
+  TooManyFunctions:
+    ignorePrivate: true
+
+style:
+  ReturnCount:
+    # Guard clause (`?: return`, `if (...) return`) di awal fungsi justru memperjelas alur.
+    excludeGuardClauses: true
+  MagicNumber:
+    # Angka layout/warna di UI dan data contoh di Preview/test bukan "magic number".
+    ignoreAnnotated: ['Composable', 'Preview']
+    excludes: ['**/test/**', '**/ui/theme/**']
+    # Nilai yang sudah diberi nama lewat deklarasi property bukan lagi "magic".
+    ignorePropertyDeclaration: true
+  UnusedPrivateMember:
+    # Fungsi @Preview memang tidak dipanggil dari kode.
+    ignoreAnnotated: ['Preview']
+  ForbiddenComment:
+    active: false

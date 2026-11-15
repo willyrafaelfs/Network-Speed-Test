@@ -3,16 +3,17 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.room)
 }
 
 android {
-    namespace = "com.example.networkspeedtest"
-    compileSdk = 36
+    namespace = "io.github.willyrafaelfs.speedtest"
+    compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.example.networkspeedtest"
+        applicationId = "io.github.willyrafaelfs.speedtest"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
@@ -24,7 +25,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -36,6 +37,24 @@ android {
         compose = true
         buildConfig = true
     }
+    lint {
+        // Semua temuan lint dianggap error agar CI menolak regresi kualitas.
+        warningsAsErrors = true
+        abortOnError = true
+        // Cek "versi baru tersedia" dimatikan: hasilnya berubah sendiri tiap ada rilis
+        // library baru sehingga CI bisa merah tanpa ada perubahan kode.
+        disable += setOf(
+            "GradleDependency",
+            "NewerVersionAvailable",
+            "AndroidGradlePluginVersion",
+            "OldTargetApi",
+        )
+    }
+}
+
+room {
+    // Skema tiap versi database di-commit agar migrasi bisa direview dan diuji.
+    schemaDirectory("$projectDir/schemas")
 }
 
 dependencies {
@@ -67,7 +86,7 @@ dependencies {
     // Hilt (dependency injection)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
-    implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
 
     // Unit test
     testImplementation(libs.junit)

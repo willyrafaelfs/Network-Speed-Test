@@ -1,0 +1,11 @@
+# Normalisasi line ending: LF di repo dan di CI (Linux), CRLF hanya untuk skrip Windows.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Berkas biner
+*.jar binary
+*.png binary
+*.webp binary
+*.jpg binary
+*.gif binary

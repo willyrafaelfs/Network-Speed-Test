@@ -1,0 +1,83 @@
+# Pipeline GitLab: setara dengan .github/workflows/ci.yml.
+# Image JDK polos + Android command-line tools; AGP mengunduh platform & build-tools
+# yang dibutuhkan secara otomatis setelah lisensi diterima. SDK di-cache antar pipeline.
+
+image: eclipse-temurin:21-jdk
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    # Hindari pipeline ganda saat branch sudah punya merge request terbuka.
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+variables:
+  ANDROID_HOME: "$CI_PROJECT_DIR/.android-sdk"
+  # cmdline-tools 19.0. Versi yang lebih baru mengganti sdkmanager dengan CLI `android`
+  # dan tidak lagi menerima lisensi lewat `sdkmanager --licenses`.
+  ANDROID_CMDLINE_TOOLS_VERSION: "13114758"
+  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle-home"
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+  DEBIAN_FRONTEND: noninteractive
+
+cache:
+  key:
+    files:
+      - gradle/wrapper/gradle-wrapper.properties
+      - gradle/libs.versions.toml
+  paths:
+    - .gradle-home/caches/
+    - .gradle-home/wrapper/
+    - .android-sdk/
+
+stages:
+  - verify
+  - build
+
+before_script:
+  - apt-get update -qq && apt-get install -y -qq --no-install-recommends curl unzip > /dev/null
+  # Folder dinamai sesuai versi agar SDK hasil cache dari versi lain tidak terpakai.
+  - export SDKMANAGER="$ANDROID_HOME/cmdline-tools/$ANDROID_CMDLINE_TOOLS_VERSION/bin/sdkmanager"
+  - |
+    if [ ! -x "$SDKMANAGER" ]; then
+      curl -fsSL -o /tmp/cmdline-tools.zip \
+        "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_TOOLS_VERSION}_latest.zip"
+      mkdir -p "$ANDROID_HOME/cmdline-tools" /tmp/cmdline-tools
+      unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-tools
+      mv /tmp/cmdline-tools/cmdline-tools "$ANDROID_HOME/cmdline-tools/$ANDROID_CMDLINE_TOOLS_VERSION"
+    fi
+  # `yes` dihentikan SIGPIPE saat sdkmanager selesai; abaikan agar tidak gagal di bawah pipefail.
+  - (yes || true) | "$SDKMANAGER" --licenses > /dev/null
+  - chmod +x ./gradlew
+
+static-analysis:
+  stage: verify
+  script:
+    - ./gradlew spotlessCheck detekt lintDebug
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - build/reports/
+      - app/build/reports/
+
+unit-tests:
+  stage: verify
+  script:
+    - ./gradlew testDebugUnitTest
+  artifacts:
+    when: always
+    expire_in: 1 week
+    reports:
+      junit: app/build/test-results/testDebugUnitTest/TEST-*.xml
+
+assemble:
+  stage: build
+  script:
+    - ./gradlew assembleDebug
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - app/build/outputs/apk/debug/

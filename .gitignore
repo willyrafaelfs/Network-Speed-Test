@@ -1,12 +1,9 @@
 *.iml
 .gradle
+.kotlin
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+# Konfigurasi IDE (Android Studio / IntelliJ) bersifat lokal per mesin
+/.idea/
 .DS_Store
 /build
 /captures
