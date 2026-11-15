@@ -1,6 +1,8 @@
 package io.github.willyrafaelfs.speedtest.presentation.speedtest
 
+import io.github.willyrafaelfs.speedtest.domain.model.BufferbloatGrade
 import io.github.willyrafaelfs.speedtest.domain.model.NetworkInfo
+import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestError
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestPhase
 
 /**
@@ -12,8 +14,9 @@ import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestPhase
  * @param currentSpeedMbps kecepatan sesaat untuk animasi gauge.
  * @param progressFraction progres fase saat ini (0f..1f).
  * @param pingMs / jitterMs / downloadMbps / uploadMbps hasil tiap fase.
+ * @param downloadLatencyMs / uploadLatencyMs latency saat beban selama download/upload.
  * @param networkInfo info koneksi terkini (jenis, SSID/operator, IP publik).
- * @param errorMessage pesan error bila test gagal; null bila tidak ada.
+ * @param error penyebab test gagal; null bila tidak ada.
  */
 data class SpeedTestUiState(
     val phase: SpeedTestPhase = SpeedTestPhase.IDLE,
@@ -24,9 +27,15 @@ data class SpeedTestUiState(
     val jitterMs: Double? = null,
     val downloadMbps: Double? = null,
     val uploadMbps: Double? = null,
+    val downloadLatencyMs: Double? = null,
+    val uploadLatencyMs: Double? = null,
     val networkInfo: NetworkInfo = NetworkInfo.Unknown,
-    val errorMessage: String? = null,
+    val error: SpeedTestError? = null,
 ) {
     /** True bila satu sesi test sudah selesai penuh. */
     val isFinished: Boolean get() = phase == SpeedTestPhase.FINISHED
+
+    /** Grade bufferbloat; tersedia sejak latency saat beban pertama terukur. */
+    val bufferbloatGrade: BufferbloatGrade?
+        get() = pingMs?.let { BufferbloatGrade.of(it, downloadLatencyMs, uploadLatencyMs) }
 }

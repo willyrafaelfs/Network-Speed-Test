@@ -36,10 +36,12 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestError
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestPhase
 import io.github.willyrafaelfs.speedtest.presentation.component.MetricCard
 import io.github.willyrafaelfs.speedtest.presentation.component.NetworkInfoCard
 import io.github.willyrafaelfs.speedtest.presentation.component.SpeedGauge
+import io.github.willyrafaelfs.speedtest.presentation.component.label
 import io.github.willyrafaelfs.speedtest.ui.theme.NetworkSpeedTestTheme
 import java.util.Locale
 
@@ -102,9 +104,9 @@ private fun SpeedTestContent(
     // Simpan callback terbaru agar effect (yang hanya restart saat pesan berubah)
     // tidak memanggil lambda lama bila parent recompose dengan lambda baru.
     val currentOnErrorDismiss by rememberUpdatedState(onErrorDismiss)
-    LaunchedEffect(state.errorMessage) {
-        state.errorMessage?.let { message ->
-            snackbarHostState.showSnackbar(message)
+    LaunchedEffect(state.error) {
+        state.error?.let { error ->
+            snackbarHostState.showSnackbar(errorMessage(error))
             currentOnErrorDismiss()
         }
     }
@@ -203,6 +205,27 @@ private fun MetricsGrid(state: SpeedTestUiState, modifier: Modifier = Modifier) 
                 modifier = Modifier.weight(1f),
             )
         }
+        // Latency saat beban: ping yang diukur selama download/upload berjalan.
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            MetricCard(
+                label = "Ping saat ↓",
+                value = formatMs(state.downloadLatencyMs),
+                unit = "ms",
+                modifier = Modifier.weight(1f),
+            )
+            MetricCard(
+                label = "Ping saat ↑",
+                value = formatMs(state.uploadLatencyMs),
+                unit = "ms",
+                modifier = Modifier.weight(1f),
+            )
+            MetricCard(
+                label = "Bufferbloat",
+                value = state.bufferbloatGrade?.label ?: "—",
+                unit = "grade",
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 
@@ -212,6 +235,13 @@ private fun phaseLabel(phase: SpeedTestPhase): String = when (phase) {
     SpeedTestPhase.DOWNLOAD -> "Mengukur download…"
     SpeedTestPhase.UPLOAD -> "Mengukur upload…"
     SpeedTestPhase.FINISHED -> "Test selesai"
+}
+
+private fun errorMessage(error: SpeedTestError): String = when (error) {
+    SpeedTestError.NoConnection -> "Tidak ada koneksi internet atau server tidak terjangkau."
+    SpeedTestError.Timeout -> "Server terlalu lama merespons. Coba lagi beberapa saat lagi."
+    is SpeedTestError.ServerError -> "Server menolak permintaan (HTTP ${error.httpCode}). Coba lagi nanti."
+    SpeedTestError.Unknown -> "Test gagal karena kesalahan yang tidak terduga."
 }
 
 private fun formatSpeed(value: Double?): String =
@@ -231,6 +261,8 @@ private fun SpeedTestContentPreview() {
                 jitterMs = 3.0,
                 downloadMbps = 87.4,
                 uploadMbps = 41.2,
+                downloadLatencyMs = 61.0,
+                uploadLatencyMs = 48.0,
             ),
             snackbarHostState = remember { SnackbarHostState() },
             canReadWifiName = true,
