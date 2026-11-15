@@ -19,61 +19,38 @@ class RunSpeedTestUseCase @Inject constructor(
     private val speedTestRepository: SpeedTestRepository,
 ) {
     operator fun invoke(): Flow<SpeedTestProgress> = flow {
-        // Fase 1 — Ping & Jitter
-        emit(SpeedTestProgress(phase = SpeedTestPhase.PING))
+        // Fase 1 — Ping & Jitter (koneksi idle)
+        var progress = SpeedTestProgress(phase = SpeedTestPhase.PING)
+        emit(progress)
         val ping = speedTestRepository.measurePing()
-        emit(
-            SpeedTestProgress(
-                phase = SpeedTestPhase.PING,
-                progressFraction = 1f,
-                pingMs = ping.avgLatencyMs,
-                jitterMs = ping.jitterMs,
-            ),
-        )
+        progress = progress.copy(progressFraction = 1f, pingMs = ping.avgLatencyMs, jitterMs = ping.jitterMs)
+        emit(progress)
 
-        // Fase 2 — Download (memancarkan sampel real-time)
-        var downloadMbps = 0.0
+        // Fase 2 — Download. Sampel terakhir membawa hasil final + latency saat beban.
         speedTestRepository.measureDownload().collect { sample ->
-            downloadMbps = sample.averageMbps
-            emit(
-                SpeedTestProgress(
-                    phase = SpeedTestPhase.DOWNLOAD,
-                    currentSpeedMbps = sample.instantMbps,
-                    progressFraction = sample.progressFraction,
-                    pingMs = ping.avgLatencyMs,
-                    jitterMs = ping.jitterMs,
-                    downloadMbps = sample.averageMbps,
-                ),
+            progress = progress.copy(
+                phase = SpeedTestPhase.DOWNLOAD,
+                currentSpeedMbps = sample.instantMbps,
+                progressFraction = sample.progressFraction,
+                downloadMbps = sample.averageMbps,
+                downloadLatencyMs = sample.loadedLatencyMs,
             )
+            emit(progress)
         }
 
-        // Fase 3 — Upload (memancarkan sampel real-time)
-        var uploadMbps = 0.0
+        // Fase 3 — Upload.
         speedTestRepository.measureUpload().collect { sample ->
-            uploadMbps = sample.averageMbps
-            emit(
-                SpeedTestProgress(
-                    phase = SpeedTestPhase.UPLOAD,
-                    currentSpeedMbps = sample.instantMbps,
-                    progressFraction = sample.progressFraction,
-                    pingMs = ping.avgLatencyMs,
-                    jitterMs = ping.jitterMs,
-                    downloadMbps = downloadMbps,
-                    uploadMbps = sample.averageMbps,
-                ),
+            progress = progress.copy(
+                phase = SpeedTestPhase.UPLOAD,
+                currentSpeedMbps = sample.instantMbps,
+                progressFraction = sample.progressFraction,
+                uploadMbps = sample.averageMbps,
+                uploadLatencyMs = sample.loadedLatencyMs,
             )
+            emit(progress)
         }
 
-        // Selesai — rangkuman metrik final
-        emit(
-            SpeedTestProgress(
-                phase = SpeedTestPhase.FINISHED,
-                progressFraction = 1f,
-                pingMs = ping.avgLatencyMs,
-                jitterMs = ping.jitterMs,
-                downloadMbps = downloadMbps,
-                uploadMbps = uploadMbps,
-            ),
-        )
+        // Selesai — rangkuman metrik final.
+        emit(progress.copy(phase = SpeedTestPhase.FINISHED, currentSpeedMbps = 0.0, progressFraction = 1f))
     }
 }

@@ -12,6 +12,8 @@ package io.github.willyrafaelfs.speedtest.domain.model
  * @param jitterMs hasil jitter bila fase PING sudah selesai.
  * @param downloadMbps hasil download bila fase DOWNLOAD sudah selesai.
  * @param uploadMbps hasil upload bila fase UPLOAD sudah selesai.
+ * @param downloadLatencyMs median latency selama fase DOWNLOAD (latency saat beban).
+ * @param uploadLatencyMs median latency selama fase UPLOAD (latency saat beban).
  */
 data class SpeedTestProgress(
     val phase: SpeedTestPhase,
@@ -21,4 +23,6 @@ data class SpeedTestProgress(
     val jitterMs: Double? = null,
     val downloadMbps: Double? = null,
     val uploadMbps: Double? = null,
+    val downloadLatencyMs: Double? = null,
+    val uploadLatencyMs: Double? = null,
 )
