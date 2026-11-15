@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace = "io.github.willyrafaelfs.speedtest"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "io.github.willyrafaelfs.speedtest"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
@@ -67,7 +67,7 @@ dependencies {
     // Hilt (dependency injection)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
-    implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
 
     // Unit test
     testImplementation(libs.junit)

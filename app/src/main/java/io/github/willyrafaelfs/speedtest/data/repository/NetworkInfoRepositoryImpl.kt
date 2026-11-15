@@ -113,7 +113,7 @@ class NetworkInfoRepositoryImpl @Inject constructor(
 
     private fun fetchPublicIp(): String? = runCatching {
         client.newCall(Request.Builder().url(config.publicIpUrl).build()).execute().use { response ->
-            if (response.isSuccessful) response.body?.string()?.trim()?.ifBlank { null } else null
+            if (response.isSuccessful) response.body.string().trim().ifBlank { null } else null
         }
     }.getOrNull()
 }

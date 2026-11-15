@@ -51,7 +51,7 @@ class PingTester @Inject constructor(
         return try {
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return null
-                response.body?.bytes() // konsumsi body sampai habis → RTT lengkap
+                response.body.bytes() // konsumsi body sampai habis → RTT lengkap
                 (System.nanoTime() - start) / NANOS_PER_MILLI
             }
         } catch (e: IOException) {

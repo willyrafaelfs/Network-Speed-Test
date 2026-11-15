@@ -51,7 +51,7 @@ class DownloadSpeedTester @Inject constructor(
             val request = Request.Builder().url(config.downloadUrl).build()
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) throw IOException("Download gagal: HTTP ${response.code}")
-                val source = response.body?.source() ?: throw IOException("Response body kosong")
+                val source = response.body.source()
 
                 while (System.nanoTime() < deadline) {
                     val read = source.read(sink, READ_CHUNK_BYTES)
