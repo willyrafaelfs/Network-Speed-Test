@@ -32,15 +32,16 @@ spotless {
             "ktlint_standard_chain-method-continuation" to "disabled",
         )
     kotlin {
-        target("**/*.kt")
+        // Target eksplisit (bukan **/*.kt) agar cache Gradle/SDK di dalam folder proyek,
+        // seperti .gradle-home/ di GitLab CI, tidak ikut diperiksa.
+        target("*/src/**/*.kt")
         targetExclude("**/build/**")
         ktlint(ktlintVersion)
             .editorConfigOverride(ktlintRules)
             .customRuleSets(listOf(libs.compose.rules.ktlint.get().toString()))
     }
     kotlinGradle {
-        target("**/*.gradle.kts")
-        targetExclude("**/build/**")
+        target("*.gradle.kts", "*/*.gradle.kts")
         ktlint(ktlintVersion).editorConfigOverride(ktlintRules)
     }
 }
