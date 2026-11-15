@@ -96,7 +96,10 @@ The grade is based on the worst increase over idle latency, using the thresholds
 
 ICMP needs raw sockets, which Android apps don't get without root. Latency is therefore the round-trip
 time of an HTTP request to a 0-byte endpoint, measured after one warm-up request that absorbs DNS, TCP
-and TLS setup. Jitter is the mean absolute difference between consecutive samples, as in RFC 3550.
+and TLS setup. The result is the **median** of 10 samples. The mean was used until v1.4.0, but one slow
+request (a retransmission, or a busy CPU right after install) could raise the idle latency. That in turn
+made the bufferbloat grade look better than it was. Jitter is the mean absolute difference between
+consecutive samples, as in RFC 3550, so it still reflects such spikes.
 
 ### Errors
 

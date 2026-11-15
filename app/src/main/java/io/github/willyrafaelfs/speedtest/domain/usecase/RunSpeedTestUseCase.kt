@@ -30,7 +30,7 @@ class RunSpeedTestUseCase @Inject constructor(
         var progress = SpeedTestProgress(phase = SpeedTestPhase.PING)
         emit(progress)
         val ping = speedTestRepository.measurePing()
-        progress = progress.copy(progressFraction = 1f, pingMs = ping.avgLatencyMs, jitterMs = ping.jitterMs)
+        progress = progress.copy(progressFraction = 1f, pingMs = ping.latencyMs, jitterMs = ping.jitterMs)
         emit(progress)
 
         // Fase 2 — Download. Sampel terakhir membawa hasil final + latency saat beban.

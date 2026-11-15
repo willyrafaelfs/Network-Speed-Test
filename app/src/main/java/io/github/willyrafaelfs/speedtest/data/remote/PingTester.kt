@@ -51,7 +51,7 @@ class PingTester @Inject constructor(
         }
         if (latencies.isEmpty()) throw lastError ?: IOException("Ping gagal: tidak ada respons dari server")
 
-        PingResult(avgLatencyMs = latencies.average(), jitterMs = jitterOf(latencies))
+        summarize(latencies)
     }
 
     /**
@@ -101,8 +101,17 @@ class PingTester @Inject constructor(
         return run?.execute(call, consume) ?: call.execute().use(consume)
     }
 
-    private companion object {
+    internal companion object {
         const val NANOS_PER_MILLI = 1_000_000.0
+
+        /**
+         * Latency = median sampel (tahan pencilan); jitter = rata-rata selisih absolut antar-latency
+         * berurutan (mean deviation, RFC 3550).
+         */
+        internal fun summarize(latencies: List<Double>) =
+            PingResult(latencyMs = ThroughputCalculator.percentile(latencies, MEDIAN), jitterMs = jitterOf(latencies))
+
+        private const val MEDIAN = 0.5
 
         /** Jitter = rata-rata selisih absolut antar-latency berurutan (mean deviation, RFC 3550). */
         fun jitterOf(latencies: List<Double>): Double =

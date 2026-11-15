@@ -93,7 +93,7 @@ flowchart LR
 
 | Metric | Method |
 |---|---|
-| Ping | 10 sequential HTTP requests to a 0-byte endpoint after one warm-up request; the result is the mean RTT |
+| Ping | 10 sequential HTTP requests to a 0-byte endpoint after one warm-up request; the result is the median RTT, so one slow request can't skew it |
 | Jitter | Mean absolute difference between consecutive ping samples (RFC 3550 style) |
 | Download | 4 parallel HTTP/1.1 connections for 10 s. The first 2 s (TCP slow start) are dropped, and the result is the 90th percentile of 1 s sliding windows |
 | Upload | 4 parallel connections repeatedly POST fixed-size random bodies (64 KiB, doubling up to 16 MiB). The final result counts only requests the server has answered |

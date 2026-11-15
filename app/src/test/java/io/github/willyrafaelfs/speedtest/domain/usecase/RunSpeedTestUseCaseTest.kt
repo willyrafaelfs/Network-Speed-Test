@@ -45,7 +45,7 @@ class RunSpeedTestUseCaseTest {
     private fun useCase(repository: SpeedTestRepository = fakeRepository) = RunSpeedTestUseCase(repository, settings)
 
     private val fakeRepository = FakeSpeedTestRepository(
-        ping = PingResult(avgLatencyMs = 20.0, jitterMs = 4.0),
+        ping = PingResult(latencyMs = 20.0, jitterMs = 4.0),
         downloadSamples = listOf(
             SpeedSample(instantMbps = 10.0, averageMbps = 8.0, progressFraction = 0.5f),
             SpeedSample(instantMbps = 20.0, averageMbps = 15.0, progressFraction = 1f, loadedLatencyMs = 45.0),
