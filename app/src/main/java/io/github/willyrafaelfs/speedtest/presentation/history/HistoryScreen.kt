@@ -29,6 +29,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.willyrafaelfs.speedtest.domain.model.NetworkType
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestResult
+import io.github.willyrafaelfs.speedtest.presentation.component.label
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -160,8 +161,15 @@ private fun HistoryItemCard(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
+                // Hasil lama (sebelum latency saat beban diukur) tidak punya grade.
+                Text(
+                    text = result.bufferbloatGrade?.let { "Bufferbloat: ${it.label}" }.orEmpty(),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 TextButton(onClick = onDelete) { Text("Hapus") }
             }
         }

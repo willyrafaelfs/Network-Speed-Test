@@ -3,6 +3,8 @@ package io.github.willyrafaelfs.speedtest.presentation.speedtest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestError
+import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestException
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestPhase
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestProgress
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestResult
@@ -63,7 +65,7 @@ class SpeedTestViewModel @Inject constructor(
                         it.copy(
                             isRunning = false,
                             phase = SpeedTestPhase.IDLE,
-                            errorMessage = throwable.message ?: "Test gagal dijalankan",
+                            error = (throwable as? SpeedTestException)?.error ?: SpeedTestError.Unknown,
                         )
                     }
                 }
@@ -85,7 +87,7 @@ class SpeedTestViewModel @Inject constructor(
         }
     }
 
-    fun dismissError() = _uiState.update { it.copy(errorMessage = null) }
+    fun dismissError() = _uiState.update { it.copy(error = null) }
 
     private suspend fun saveResult(progress: SpeedTestProgress) {
         val networkInfo = _uiState.value.networkInfo
@@ -97,6 +99,8 @@ class SpeedTestViewModel @Inject constructor(
             uploadMbps = progress.uploadMbps ?: 0.0,
             networkType = networkInfo.type,
             networkName = networkInfo.networkName,
+            downloadLatencyMs = progress.downloadLatencyMs,
+            uploadLatencyMs = progress.uploadLatencyMs,
         )
         // Gagal simpan tidak boleh membuat UI hasil ikut gagal.
         runCatching { saveTestResult(result) }
@@ -112,5 +116,7 @@ class SpeedTestViewModel @Inject constructor(
         jitterMs = progress.jitterMs ?: jitterMs,
         downloadMbps = progress.downloadMbps ?: downloadMbps,
         uploadMbps = progress.uploadMbps ?: uploadMbps,
+        downloadLatencyMs = progress.downloadLatencyMs ?: downloadLatencyMs,
+        uploadLatencyMs = progress.uploadLatencyMs ?: uploadLatencyMs,
     )
 }

@@ -9,6 +9,7 @@ import io.github.willyrafaelfs.speedtest.data.remote.SpeedTestConfig
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 import okhttp3.OkHttpClient
+import okhttp3.Protocol
 import okhttp3.logging.HttpLoggingInterceptor
 
 /** Menyediakan OkHttpClient dan konfigurasi test untuk seluruh aplikasi. */
@@ -38,6 +39,10 @@ object NetworkModule {
             .writeTimeout(IO_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             // Durasi total dikendalikan manual oleh engine, jadi call timeout dimatikan.
             .callTimeout(0, TimeUnit.SECONDS)
+            // HTTP/2 akan memultipleks semua stream paralel ke SATU koneksi TCP, sehingga
+            // pengukuran multi-connection kehilangan maknanya. HTTP/1.1 menjamin satu
+            // request aktif = satu koneksi TCP sendiri.
+            .protocols(listOf(Protocol.HTTP_1_1))
             .addInterceptor(logging)
             .build()
     }

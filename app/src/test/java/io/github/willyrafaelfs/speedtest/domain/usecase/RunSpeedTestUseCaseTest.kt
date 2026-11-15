@@ -2,10 +2,13 @@ package io.github.willyrafaelfs.speedtest.domain.usecase
 
 import io.github.willyrafaelfs.speedtest.domain.model.PingResult
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedSample
+import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestError
+import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestException
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestPhase
 import io.github.willyrafaelfs.speedtest.domain.repository.SpeedTestRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -29,11 +32,11 @@ class RunSpeedTestUseCaseTest {
         ping = PingResult(avgLatencyMs = 20.0, jitterMs = 4.0),
         downloadSamples = listOf(
             SpeedSample(instantMbps = 10.0, averageMbps = 8.0, progressFraction = 0.5f),
-            SpeedSample(instantMbps = 20.0, averageMbps = 15.0, progressFraction = 1f),
+            SpeedSample(instantMbps = 20.0, averageMbps = 15.0, progressFraction = 1f, loadedLatencyMs = 45.0),
         ),
         uploadSamples = listOf(
             SpeedSample(instantMbps = 5.0, averageMbps = 4.0, progressFraction = 0.5f),
-            SpeedSample(instantMbps = 8.0, averageMbps = 6.0, progressFraction = 1f),
+            SpeedSample(instantMbps = 8.0, averageMbps = 6.0, progressFraction = 1f, loadedLatencyMs = 120.0),
         ),
     )
 
@@ -77,6 +80,32 @@ class RunSpeedTestUseCaseTest {
         // Saat upload, download sudah selesai dan nilainya ikut terbawa.
         assertTrue(duringUpload.downloadMbps != null)
         assertEquals(15.0, duringUpload.downloadMbps!!, DELTA)
+    }
+
+    @Test
+    fun `latency saat beban dari sampel terakhir tiap fase ikut ke hasil final`() = runTest {
+        val finished = RunSpeedTestUseCase(fakeRepository)().toList().last()
+
+        assertEquals(45.0, finished.downloadLatencyMs!!, DELTA)
+        assertEquals(120.0, finished.uploadLatencyMs!!, DELTA)
+        assertEquals(0.0, finished.currentSpeedMbps, DELTA)
+    }
+
+    @Test
+    fun `error dari repository diteruskan dan menghentikan fase berikutnya`() = runTest {
+        val failing = object : SpeedTestRepository by fakeRepository {
+            override fun measureDownload(): Flow<SpeedSample> = flow {
+                throw SpeedTestException(SpeedTestError.Timeout)
+            }
+        }
+        val emitted = mutableListOf<SpeedTestPhase>()
+
+        val error = runCatching {
+            RunSpeedTestUseCase(failing)().collect { emitted += it.phase }
+        }.exceptionOrNull()
+
+        assertEquals(SpeedTestError.Timeout, (error as SpeedTestException).error)
+        assertTrue(SpeedTestPhase.UPLOAD !in emitted)
     }
 
     private companion object {

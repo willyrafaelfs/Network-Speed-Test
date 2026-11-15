@@ -71,6 +71,11 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
+    // lifecycle-viewmodel-compose membawa kotlinx-serialization 1.7.3, sedangkan room-migration
+    // (lewat room-testing) dikompilasi untuk 1.8.x. AGP mengunci versi di APK test ke versi APK
+    // aplikasi, jadi versi aplikasi diselaraskan agar test migrasi tidak gagal (AbstractMethodError).
+    implementation(platform(libs.kotlinx.serialization.bom))
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
@@ -91,11 +96,15 @@ dependencies {
     // Unit test
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    // Server HTTP lokal untuk menguji engine download/upload/ping tanpa internet.
+    testImplementation(libs.okhttp.mockwebserver)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+    // MigrationTestHelper untuk menguji migrasi skema Room.
+    androidTestImplementation(libs.androidx.room.testing)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
