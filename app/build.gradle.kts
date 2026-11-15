@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.room)
 }
 
 android {
@@ -49,6 +50,11 @@ android {
             "OldTargetApi",
         )
     }
+}
+
+room {
+    // Skema tiap versi database di-commit agar migrasi bisa direview dan diuji.
+    schemaDirectory("$projectDir/schemas")
 }
 
 dependencies {
