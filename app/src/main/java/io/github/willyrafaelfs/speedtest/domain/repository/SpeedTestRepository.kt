@@ -1,5 +1,6 @@
 package io.github.willyrafaelfs.speedtest.domain.repository
 
+import io.github.willyrafaelfs.speedtest.domain.model.MeasurementOptions
 import io.github.willyrafaelfs.speedtest.domain.model.PingResult
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedSample
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestException
@@ -21,8 +22,8 @@ interface SpeedTestRepository {
     suspend fun measurePing(): PingResult
 
     /** Mengunduh data lewat beberapa koneksi paralel dan memancarkan [SpeedSample] secara berkala. */
-    fun measureDownload(): Flow<SpeedSample>
+    fun measureDownload(options: MeasurementOptions): Flow<SpeedSample>
 
     /** Mengunggah data acak lewat beberapa koneksi paralel dan memancarkan [SpeedSample] secara berkala. */
-    fun measureUpload(): Flow<SpeedSample>
+    fun measureUpload(options: MeasurementOptions): Flow<SpeedSample>
 }

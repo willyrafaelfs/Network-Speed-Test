@@ -1,5 +1,7 @@
 package io.github.willyrafaelfs.speedtest.data.remote
 
+import io.github.willyrafaelfs.speedtest.domain.model.MeasurementOptions
+
 /**
  * Parameter untuk engine speed test. Memakai endpoint publik Cloudflare yang
  * lazim dipakai untuk pengukuran (menghasilkan/menerima byte dalam jumlah sembarang).
@@ -51,3 +53,7 @@ data class SpeedTestConfig(
 
 private const val DEFAULT_UPLOAD_MIN_REQUEST_BYTES = 64L * 1024 // 64 KiB
 private const val DEFAULT_UPLOAD_MAX_REQUEST_BYTES = 16L * 1024 * 1024 // 16 MiB
+
+/** Konfigurasi dengan durasi & jumlah koneksi dari preferensi user. */
+internal fun SpeedTestConfig.withOptions(options: MeasurementOptions): SpeedTestConfig =
+    copy(testDurationMillis = options.durationMillis, streamCount = options.streamCount)

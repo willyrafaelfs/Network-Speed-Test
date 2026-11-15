@@ -1,11 +1,14 @@
 package io.github.willyrafaelfs.speedtest.domain.usecase
 
+import io.github.willyrafaelfs.speedtest.domain.model.AppSettings
+import io.github.willyrafaelfs.speedtest.domain.model.MeasurementOptions
 import io.github.willyrafaelfs.speedtest.domain.model.PingResult
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedSample
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestError
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestException
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestPhase
 import io.github.willyrafaelfs.speedtest.domain.repository.SpeedTestRepository
+import io.github.willyrafaelfs.speedtest.testing.FakeSettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flow
@@ -24,9 +27,22 @@ class RunSpeedTestUseCaseTest {
         private val uploadSamples: List<SpeedSample>,
     ) : SpeedTestRepository {
         override suspend fun measurePing(): PingResult = ping
-        override fun measureDownload(): Flow<SpeedSample> = downloadSamples.asFlow()
-        override fun measureUpload(): Flow<SpeedSample> = uploadSamples.asFlow()
+        val receivedOptions = mutableListOf<MeasurementOptions>()
+
+        override fun measureDownload(options: MeasurementOptions): Flow<SpeedSample> {
+            receivedOptions += options
+            return downloadSamples.asFlow()
+        }
+
+        override fun measureUpload(options: MeasurementOptions): Flow<SpeedSample> {
+            receivedOptions += options
+            return uploadSamples.asFlow()
+        }
     }
+
+    private val settings = FakeSettingsRepository()
+
+    private fun useCase(repository: SpeedTestRepository = fakeRepository) = RunSpeedTestUseCase(repository, settings)
 
     private val fakeRepository = FakeSpeedTestRepository(
         ping = PingResult(avgLatencyMs = 20.0, jitterMs = 4.0),
@@ -42,7 +58,7 @@ class RunSpeedTestUseCaseTest {
 
     @Test
     fun `melalui fase PING lalu DOWNLOAD lalu UPLOAD lalu FINISHED`() = runTest {
-        val emissions = RunSpeedTestUseCase(fakeRepository)().toList()
+        val emissions = useCase()().toList()
         val phases = emissions.map { it.phase }.distinct()
 
         assertEquals(SpeedTestPhase.PING, emissions.first().phase)
@@ -59,7 +75,7 @@ class RunSpeedTestUseCaseTest {
 
     @Test
     fun `emisi FINISHED memuat seluruh metrik final`() = runTest {
-        val finished = RunSpeedTestUseCase(fakeRepository)().toList().last()
+        val finished = useCase()().toList().last()
 
         assertEquals(SpeedTestPhase.FINISHED, finished.phase)
         assertEquals(20.0, finished.pingMs!!, DELTA)
@@ -71,7 +87,7 @@ class RunSpeedTestUseCaseTest {
 
     @Test
     fun `hasil ping dibawa terus selama fase download dan upload`() = runTest {
-        val emissions = RunSpeedTestUseCase(fakeRepository)().toList()
+        val emissions = useCase()().toList()
 
         val duringDownload = emissions.first { it.phase == SpeedTestPhase.DOWNLOAD }
         val duringUpload = emissions.first { it.phase == SpeedTestPhase.UPLOAD }
@@ -84,7 +100,7 @@ class RunSpeedTestUseCaseTest {
 
     @Test
     fun `latency saat beban dari sampel terakhir tiap fase ikut ke hasil final`() = runTest {
-        val finished = RunSpeedTestUseCase(fakeRepository)().toList().last()
+        val finished = useCase()().toList().last()
 
         assertEquals(45.0, finished.downloadLatencyMs!!, DELTA)
         assertEquals(120.0, finished.uploadLatencyMs!!, DELTA)
@@ -94,18 +110,29 @@ class RunSpeedTestUseCaseTest {
     @Test
     fun `error dari repository diteruskan dan menghentikan fase berikutnya`() = runTest {
         val failing = object : SpeedTestRepository by fakeRepository {
-            override fun measureDownload(): Flow<SpeedSample> = flow {
+            override fun measureDownload(options: MeasurementOptions): Flow<SpeedSample> = flow {
                 throw SpeedTestException(SpeedTestError.Timeout)
             }
         }
         val emitted = mutableListOf<SpeedTestPhase>()
 
         val error = runCatching {
-            RunSpeedTestUseCase(failing)().collect { emitted += it.phase }
+            useCase(failing)().collect { emitted += it.phase }
         }.exceptionOrNull()
 
         assertEquals(SpeedTestError.Timeout, (error as SpeedTestException).error)
         assertTrue(SpeedTestPhase.UPLOAD !in emitted)
+    }
+
+    @Test
+    fun `durasi dan jumlah koneksi diambil dari Settings`() = runTest {
+        settings.update { it.copy(testDurationSeconds = 15, streamCount = 6) }
+
+        useCase()().toList()
+
+        val expected = MeasurementOptions(durationMillis = 15_000, streamCount = 6)
+        assertEquals(listOf(expected, expected), fakeRepository.receivedOptions)
+        assertEquals(expected, AppSettings(testDurationSeconds = 15, streamCount = 6).measurementOptions)
     }
 
     private companion object {
