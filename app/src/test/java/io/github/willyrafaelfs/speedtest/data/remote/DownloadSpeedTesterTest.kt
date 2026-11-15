@@ -64,8 +64,21 @@ class DownloadSpeedTesterTest {
         assertTrue(samples.size > 5)
         assertTrue(samples.zipWithNext().all { (a, b) -> b.progressFraction >= a.progressFraction })
         assertNotNull(samples.last().loadedLatencyMs)
-        // Satu request ping dipakai untuk warm-up, lalu ping berkala tiap 100 ms.
+        // Satu request ping untuk warm-up sebelum beban, lalu ping berkala tiap 100 ms.
         assertTrue(server.requestsTo("/ping").size >= 3)
+    }
+
+    @Test
+    fun `ping yang tak kunjung selesai tetap tercatat sebagai batas bawah latency`() = runTest(timeout = TEST_TIMEOUT) {
+        // Bufferbloat ekstrem: setelah warm-up, setiap ping tertahan lebih lama dari fase (2 detik).
+        FakeSpeedServer(slowPingsFrom = 2, slowPingDelayMillis = 10_000).use { slow ->
+            val config = slow.config()
+            val final = DownloadSpeedTester(client, config, PingTester(client, config)).measure().toList().last()
+
+            val latency = final.loadedLatencyMs
+            assertNotNull("Latency saat beban tidak boleh kosong", latency)
+            assertTrue("Batas bawah $latency ms", latency!! >= 1_500.0)
+        }
     }
 
     @Test

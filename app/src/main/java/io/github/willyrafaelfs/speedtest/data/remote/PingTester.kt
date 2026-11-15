@@ -7,6 +7,7 @@ import kotlin.math.abs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
+import okhttp3.ConnectionPool
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -19,10 +20,16 @@ import okhttp3.Response
  * ICMP ping butuh akses root, maka RTT HTTP dipakai sebagai proxy latency yang wajar.
  */
 class PingTester @Inject constructor(
-    private val client: OkHttpClient,
+    client: OkHttpClient,
     private val config: SpeedTestConfig,
 ) {
     private val request = Request.Builder().url(config.pingUrl).build()
+
+    // Connection pool sendiri: koneksi ping yang sudah "hangat" tidak boleh diambil worker
+    // download/upload. Tanpa ini, ping saat beban harus membuka koneksi TCP + TLS baru di
+    // tengah link yang penuh, dan pada bufferbloat parah handshake itu bisa lebih lama dari
+    // seluruh fase sehingga latency saat beban tidak terukur sama sekali.
+    private val client = client.newBuilder().connectionPool(ConnectionPool()).build()
 
     /** Latency & jitter saat koneksi idle. */
     suspend fun measure(): PingResult = withContext(Dispatchers.IO) {
@@ -48,22 +55,34 @@ class PingTester @Inject constructor(
     }
 
     /**
+     * Memastikan koneksi ping sudah terbuka (TCP + TLS) sebelum beban dimulai, sehingga
+     * ping saat beban hanya mengukur round-trip, bukan handshake. Kegagalan diabaikan:
+     * [sampleUnderLoad] tetap mencoba.
+     */
+    internal fun warmUp() {
+        try {
+            rttMillis()
+        } catch (ignored: IOException) {
+            // Akan terlihat sebagai ping yang gagal/lambat saat beban.
+        }
+    }
+
+    /**
      * Ping berkala selama fase download/upload berjalan (latency saat beban), sampai
      * [run] dihentikan. Hasil ditambahkan ke [sink]; ping yang gagal diabaikan.
      *
-     * Ping saat beban memakai koneksi terpisah dari koneksi throughput, sehingga
-     * sampel pertama ikut menanggung TCP + TLS handshake dan sengaja dibuang.
+     * Bila sampai fase berakhir belum ada ping yang selesai, lama ping yang sedang
+     * berjalan dicatat sebagai **batas bawah** latency: kosong justru akan menyembunyikan
+     * kondisi bufferbloat terparah.
      */
     internal fun sampleUnderLoad(run: PhaseRun, sink: MutableList<Double>) {
-        var warmedUp = false
         while (run.isActive()) {
             val begin = System.nanoTime()
             try {
-                val rtt = rttMillis(run)
-                if (warmedUp) sink += rtt
-                warmedUp = true
+                sink += rttMillis(run)
             } catch (ignored: IOException) {
                 // Ping di bawah beban berat wajar sesekali gagal; lanjutkan ke ping berikutnya.
+                if (run.isStopping && sink.isEmpty()) sink += (System.nanoTime() - begin) / NANOS_PER_MILLI
             }
             val elapsedMillis = (System.nanoTime() - begin) / NANOS_PER_MILLI
             run.awaitStop((config.loadedPingIntervalMillis - elapsedMillis.toLong()).coerceAtLeast(0))
