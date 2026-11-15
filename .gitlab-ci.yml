@@ -100,8 +100,10 @@ release:
         echo "Tag $CI_COMMIT_TAG tidak punya pesan. Gunakan annotated tag: git tag -a $CI_COMMIT_TAG" >&2
         exit 1
       fi
-    - echo "Membuat release $CI_COMMIT_TAG"
+    # Ditulis ke file, bukan diteruskan langsung: runner tidak meng-escape description,
+    # sehingga tanda kutip di catatan rilis memecah argumen glab (gagal di v1.3.0).
+    - printf '%s\n' "$CI_COMMIT_TAG_MESSAGE" > release-notes.md
   release:
     tag_name: $CI_COMMIT_TAG
     name: $CI_COMMIT_TAG
-    description: $CI_COMMIT_TAG_MESSAGE
+    description: ./release-notes.md
