@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Warna brand untuk splash & ikon (di luar Compose). -->
+    <color name="netra_ink">#FF0B1220</color>
+    <!-- Latar window sebelum Compose menggambar; varian gelap ada di values-night. -->
+    <color name="netra_window_background">#FFEEF2F8</color>
+</resources>
