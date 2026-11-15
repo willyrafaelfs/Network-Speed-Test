@@ -15,7 +15,9 @@ workflow:
 
 variables:
   ANDROID_HOME: "$CI_PROJECT_DIR/.android-sdk"
-  ANDROID_CMDLINE_TOOLS_VERSION: "16111833"
+  # cmdline-tools 19.0. Versi yang lebih baru mengganti sdkmanager dengan CLI `android`
+  # dan tidak lagi menerima lisensi lewat `sdkmanager --licenses`.
+  ANDROID_CMDLINE_TOOLS_VERSION: "13114758"
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle-home"
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
@@ -35,15 +37,17 @@ stages:
 
 before_script:
   - apt-get update -qq && apt-get install -y -qq --no-install-recommends curl unzip > /dev/null
+  # Folder dinamai sesuai versi agar SDK hasil cache dari versi lain tidak terpakai.
+  - export SDKMANAGER="$ANDROID_HOME/cmdline-tools/$ANDROID_CMDLINE_TOOLS_VERSION/bin/sdkmanager"
   - |
-    if [ ! -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
+    if [ ! -x "$SDKMANAGER" ]; then
       curl -fsSL -o /tmp/cmdline-tools.zip \
         "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_TOOLS_VERSION}_latest.zip"
-      mkdir -p "$ANDROID_HOME/cmdline-tools"
-      unzip -q /tmp/cmdline-tools.zip -d "$ANDROID_HOME/cmdline-tools"
-      mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest"
+      mkdir -p "$ANDROID_HOME/cmdline-tools" /tmp/cmdline-tools
+      unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-tools
+      mv /tmp/cmdline-tools/cmdline-tools "$ANDROID_HOME/cmdline-tools/$ANDROID_CMDLINE_TOOLS_VERSION"
     fi
-  - yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+  - yes | "$SDKMANAGER" --licenses > /dev/null
   - chmod +x ./gradlew
 
 static-analysis:
