@@ -35,8 +35,20 @@ jobs:
       - name: Static analysis (Spotless, Detekt, Android Lint)
         run: ./gradlew spotlessCheck detekt lintDebug
 
-      - name: Unit tests
-        run: ./gradlew testDebugUnitTest
+      # Satu eksekusi test sekaligus: unit, Robolectric (DAO & UI), verifikasi screenshot
+      # Roborazzi, laporan coverage Kover, dan pengecekan target coverage per layer.
+      - name: Tests, screenshots & coverage
+        run: ./gradlew verifyRoborazziDebug koverHtmlReportDebug :app:coverageSummary | tee coverage.log
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          {
+            echo '### Coverage'
+            echo '```'
+            sed -n '/^Layer/,/^Total line coverage/p' coverage.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Assemble debug APK
         run: ./gradlew assembleDebug
@@ -50,6 +62,7 @@ jobs:
             build/reports/
             app/build/reports/
             app/build/test-results/
+            app/build/outputs/roborazzi/
           if-no-files-found: ignore
           retention-days: 7
 

@@ -21,7 +21,7 @@ class PingTesterTest {
         val config = server.config()
         val result = PingTester(client, config).measure()
 
-        assertTrue("Latency ${result.avgLatencyMs} ms", result.avgLatencyMs >= PING_DELAY_MILLIS)
+        assertTrue("Latency ${result.latencyMs} ms", result.latencyMs >= PING_DELAY_MILLIS)
         assertTrue(result.jitterMs >= 0.0)
         // 1 warm-up + pingCount sampel.
         assertEquals(config.pingCount + 1, server.requestsTo("/ping").size)
@@ -36,6 +36,17 @@ class PingTesterTest {
         } catch (e: HttpStatusException) {
             assertEquals(403, e.code)
         }
+    }
+
+    @Test
+    fun `latency memakai median sehingga satu ping lambat tidak menggeser hasil`() {
+        val latencies = listOf(20.0, 21.0, 19.0, 480.0, 20.0, 22.0, 20.0, 21.0, 19.0, 20.0)
+
+        val result = PingTester.summarize(latencies)
+
+        // Rata-rata akan menjadi 66,2 ms; median tetap 20 ms.
+        assertEquals(20.0, result.latencyMs, 1e-9)
+        assertTrue("Jitter tetap mencerminkan lonjakan: ${result.jitterMs}", result.jitterMs > 50.0)
     }
 
     private companion object {

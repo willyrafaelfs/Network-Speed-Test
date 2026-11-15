@@ -10,6 +10,9 @@ complexity:
   LongParameterList:
     # Composable stateless lazim menerima banyak state + callback.
     ignoreAnnotated: ['Composable']
+    # Parameter dengan nilai default (mis. factory data test, dipanggil dengan argumen bernama)
+    # bukan beban bagi pemanggil.
+    ignoreDefaultParameters: true
   LongMethod:
     ignoreAnnotated: ['Composable']
   TooManyFunctions:

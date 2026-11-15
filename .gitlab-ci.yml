@@ -67,10 +67,16 @@ static-analysis:
 unit-tests:
   stage: verify
   script:
-    - ./gradlew testDebugUnitTest
+    # Unit + Robolectric (DAO & UI), verifikasi screenshot Roborazzi, dan coverage per layer.
+    - ./gradlew verifyRoborazziDebug koverHtmlReportDebug :app:coverageSummary
+  # Angka coverage untuk badge & tampilan pipeline, dibaca dari log coverageSummary.
+  coverage: '/Total line coverage: (\d+\.\d+)%/'
   artifacts:
     when: always
     expire_in: 1 week
+    paths:
+      - app/build/reports/kover/
+      - app/build/outputs/roborazzi/
     reports:
       junit: app/build/test-results/testDebugUnitTest/TEST-*.xml
 
