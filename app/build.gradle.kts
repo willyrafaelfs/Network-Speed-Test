@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -9,6 +11,21 @@ plugins {
     alias(libs.plugins.kover)
 }
 
+// Kunci rilis: dari environment (CI, lihat .github/workflows/release.yml) atau dari
+// ~/.android/netra-release.properties (mesin developer). Keystore tidak pernah ada di repo.
+// Tanpa keduanya, build release tetap jalan tetapi APK-nya tidak ditandatangani.
+val releaseSigning: Map<String, String>? = System.getenv("NETRA_KEYSTORE_PATH")?.let { path ->
+    mapOf(
+        "storeFile" to path,
+        "storePassword" to System.getenv("NETRA_KEYSTORE_PASSWORD").orEmpty(),
+        "keyAlias" to System.getenv("NETRA_KEY_ALIAS").orEmpty(),
+        "keyPassword" to System.getenv("NETRA_KEY_PASSWORD").orEmpty(),
+    )
+} ?: File(System.getProperty("user.home"), ".android/netra-release.properties")
+    .takeIf { it.exists() }
+    ?.let { file -> Properties().apply { file.inputStream().use(::load) } }
+    ?.let { props -> props.stringPropertyNames().associateWith { props.getProperty(it) } }
+
 android {
     namespace = "io.github.willyrafaelfs.speedtest"
     compileSdk = 37
@@ -17,19 +34,36 @@ android {
         applicationId = "io.github.willyrafaelfs.speedtest"
         minSdk = 24
         targetSdk = 37
-        versionCode = 4
-        versionName = "1.4.0"
+        versionCode = 5
+        versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (releaseSigning != null) {
+            create("release") {
+                storeFile = file(releaseSigning.getValue("storeFile"))
+                storePassword = releaseSigning.getValue("storePassword")
+                keyAlias = releaseSigning.getValue("keyAlias")
+                keyPassword = releaseSigning.getValue("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            // Bisa terpasang berdampingan dengan versi rilis di perangkat yang sama.
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
         release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
+            // R8: shrink, optimasi, dan obfuscation; resource yang tidak dipakai ikut dibuang.
+            // Aturan keep tambahan (bila perlu) ada di src/main/keepRules/.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            signingConfig = signingConfigs.findByName("release")
         }
     }
     compileOptions {

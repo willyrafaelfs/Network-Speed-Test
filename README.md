@@ -2,6 +2,7 @@
 
 # Netra
 
+[![Release](https://img.shields.io/github/v/release/willyrafaelfs/Network-Speed-Test?label=release)](https://github.com/willyrafaelfs/Network-Speed-Test/releases/latest)
 [![CI](https://github.com/willyrafaelfs/Network-Speed-Test/actions/workflows/ci.yml/badge.svg)](https://github.com/willyrafaelfs/Network-Speed-Test/actions/workflows/ci.yml)
 [![GitLab pipeline](https://gitlab.com/willyrafaelfs/Network-Speed-Test/badges/main/pipeline.svg)](https://gitlab.com/willyrafaelfs/Network-Speed-Test/-/pipelines)
 [![Coverage](https://gitlab.com/willyrafaelfs/Network-Speed-Test/badges/main/coverage.svg)](https://gitlab.com/willyrafaelfs/Network-Speed-Test/-/pipelines)
@@ -17,6 +18,17 @@ Javanese: an instrument for seeing how your connection behaves.
 |---|---|---|
 | <img src="docs/images/demo.gif" alt="A full test running: the dial follows the live speed while the chart draws download and upload traces" width="240"> | <img src="docs/images/screen-test-light.png" alt="Finished test in light mode with download and upload traces" width="240"> | <img src="docs/images/screen-history-dark.png" alt="History list with download, upload, ping and bufferbloat grade per result" width="240"> |
 
+## Download
+
+Get the signed APK from the [latest release](https://github.com/willyrafaelfs/Network-Speed-Test/releases/latest)
+(Android 7.0 or newer). Each release also lists a SHA-256 checksum:
+
+```bash
+sha256sum -c netra-v2.0.0.apk.sha256
+```
+
+Netra sends nothing but test traffic: no accounts, no analytics. See the [privacy policy](docs/PRIVACY.md).
+
 ## Features
 
 - **Full speed test**: ping → download → upload, with a live animated gauge and per-phase progress
@@ -25,7 +37,8 @@ Javanese: an instrument for seeing how your connection behaves.
 - **Accurate upload**: the final result only counts bytes the server has acknowledged, not bytes sitting in the
   socket send buffer
 - **Latency under load & bufferbloat grade (A+ to F)**: ping keeps running during download and upload
-- **Latency & jitter**: averaged HTTP round-trips after a warm-up request, so the TLS handshake isn't counted
+- **Latency & jitter**: the median of 10 HTTP round-trips after a warm-up request, so neither the TLS handshake
+  nor one slow request skews it
 - **Real-time sampling**: throughput is emitted every 250 ms as a Kotlin `Flow`
 - **Clear errors**: no connection, timeout, and server rejection are told apart and explained in plain language
 - **Instrument-style UI**: custom design system (navy base, one color per channel: cyan download, lime upload,
@@ -46,18 +59,19 @@ Javanese: an instrument for seeing how your connection behaves.
 
 ## Tech stack
 
-| Area | Libraries |
-|---|---|
-| UI | Jetpack Compose, Material 3 (custom theme), Canvas-drawn dial & chart, SplashScreen API |
-| Navigation | Navigation Compose with type-safe routes, Material 3 adaptive navigation suite |
-| Architecture | Clean Architecture (domain / data / presentation), MVVM, unidirectional data flow |
-| Async | Kotlin Coroutines & Flow (`callbackFlow`, `flatMapLatest`, `stateIn`) |
-| Networking | OkHttp 5 |
-| Persistence | Room (exported schemas, auto-migrations with tests, one-to-many relation), DataStore Preferences |
-| DI | Hilt |
-| Quality | Spotless + ktlint (with Compose rules), Detekt, Android Lint (warnings as errors), Kover |
-| Testing | JUnit, kotlinx-coroutines-test, Turbine, MockWebServer, Robolectric, Compose UI test, Hilt testing, Roborazzi |
-| CI | GitHub Actions & GitLab CI |
+| Area | Choice | Why |
+|---|---|---|
+| UI | Jetpack Compose, Material 3 with a custom theme, Canvas | The dial and charts are drawn directly on Canvas, with no chart library, so they match the design system exactly |
+| Navigation | Navigation Compose with type-safe routes, Material 3 adaptive navigation suite | The compiler checks route arguments, and the bottom bar or rail is picked from the window size |
+| Architecture | Clean Architecture (domain / data / presentation), MVVM, unidirectional data flow | The engine and storage can be swapped and tested behind interfaces; the UI renders one immutable state |
+| Async | Kotlin Coroutines & Flow | Live samples are a natural stream, and cancelling a test cancels every connection |
+| Networking | OkHttp 5 (HTTP/1.1) | Low-level control over connections, needed for parallel streams and accurate byte counting |
+| Persistence | Room, DataStore Preferences | Room for relational history with tested migrations; DataStore for typed, async settings |
+| DI | Hilt | Wiring that is checked at compile time, plus test modules that swap the engine for fakes |
+| Release | R8 (minify + resource shrinking), APK signing in CI | A signed 2.3 MB APK. The key lives only in CI secrets, never in the repo |
+| Quality | Spotless + ktlint (Compose rules), Detekt, Android Lint (warnings as errors), Kover | Style and static analysis are enforced in CI, not left to review |
+| Testing | JUnit, coroutines-test, Turbine, MockWebServer, Robolectric, Compose UI test, Hilt testing, Roborazzi | Every layer is tested on the JVM, so CI needs no emulator |
+| CI/CD | GitHub Actions & GitLab CI | Both run the same checks; a version tag publishes signed releases on both |
 
 ## Architecture
 
@@ -75,6 +89,7 @@ flowchart LR
         IMPL[Repository implementations]
         ENGINE[Ping / Download / Upload engines]
         DB[(Room)]
+        DS[(DataStore)]
         CM[ConnectivityManager]
     end
 
@@ -82,6 +97,7 @@ flowchart LR
     IMPL -. implements .-> REPO
     IMPL --> ENGINE -->|HTTP| CF[(Cloudflare speed endpoints)]
     IMPL --> DB
+    IMPL --> DS
     IMPL --> CM
 ```
 
@@ -119,7 +135,18 @@ cd Network-Speed-Test
 ./gradlew assembleDebug        # APK in app/build/outputs/apk/debug/
 ```
 
-Or open the project in Android Studio and run the `app` configuration.
+Or open the project in Android Studio and run the `app` configuration. Debug builds install as
+`io.github.willyrafaelfs.speedtest.debug`, so they can sit next to the release version.
+
+### Release build
+
+`./gradlew assembleRelease` builds a minified APK. It is signed when a key is available, from the
+`NETRA_KEYSTORE_PATH`, `NETRA_KEYSTORE_PASSWORD`, `NETRA_KEY_ALIAS`, and `NETRA_KEY_PASSWORD` environment variables
+or from `~/.android/netra-release.properties`. Otherwise it is left unsigned.
+
+Pushing a tag such as `v2.0.0` runs [`release.yml`](.github/workflows/release.yml). It builds and verifies the
+signed APK and publishes a GitHub Release with the tag notes, an automatic changelog, the APK, its SHA-256, and the
+R8 mapping file. GitLab CI creates the matching GitLab Release, which links to the same APK.
 
 ### Quality checks
 
@@ -175,7 +202,7 @@ app/src/main/java/io/github/willyrafaelfs/speedtest/
 - [x] UI refresh: custom design system, live throughput chart, English & Indonesian localization
 - [x] History details with trend charts, shareable result card, and settings
 - [x] Broader test coverage (ViewModel, engine, Room, Compose UI and screenshot tests)
-- [ ] Signed release builds published to GitHub & GitLab Releases
+- [x] Signed release builds published to GitHub & GitLab Releases
 
 ## License
 
