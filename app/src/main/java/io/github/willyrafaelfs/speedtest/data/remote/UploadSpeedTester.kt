@@ -1,5 +1,6 @@
 package io.github.willyrafaelfs.speedtest.data.remote
 
+import io.github.willyrafaelfs.speedtest.domain.model.MeasurementOptions
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedSample
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -36,7 +37,9 @@ class UploadSpeedTester @Inject constructor(
     // Data acak agar tidak terkompresi (kompresi bisa memalsukan kecepatan).
     private val chunk = ByteArray(WRITE_CHUNK_BYTES).also { Random.nextBytes(it) }
 
-    fun measure(): Flow<SpeedSample> = measureThroughput(config, pingTester, UploadWorkload())
+    /** @param options durasi & jumlah koneksi dari Settings; null = pakai [SpeedTestConfig] apa adanya. */
+    fun measure(options: MeasurementOptions? = null): Flow<SpeedSample> =
+        measureThroughput(options?.let(config::withOptions) ?: config, pingTester, UploadWorkload())
 
     private inner class UploadWorkload : ThroughputWorkload {
         private val completed = ConcurrentLinkedQueue<ByteSpan>()

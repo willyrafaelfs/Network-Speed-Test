@@ -8,7 +8,9 @@ import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestException
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestPhase
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestProgress
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestResult
+import io.github.willyrafaelfs.speedtest.domain.model.TracePoint
 import io.github.willyrafaelfs.speedtest.domain.usecase.GetNetworkInfoUseCase
+import io.github.willyrafaelfs.speedtest.domain.usecase.ObserveSettingsUseCase
 import io.github.willyrafaelfs.speedtest.domain.usecase.RunSpeedTestUseCase
 import io.github.willyrafaelfs.speedtest.domain.usecase.SaveTestResultUseCase
 import javax.inject.Inject
@@ -33,6 +35,7 @@ class SpeedTestViewModel @Inject constructor(
     private val runSpeedTest: RunSpeedTestUseCase,
     private val saveTestResult: SaveTestResultUseCase,
     getNetworkInfo: GetNetworkInfoUseCase,
+    observeSettings: ObserveSettingsUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SpeedTestUiState())
@@ -44,6 +47,9 @@ class SpeedTestViewModel @Inject constructor(
         // Amati info jaringan sepanjang hidup ViewModel dan cerminkan ke state.
         getNetworkInfo()
             .onEach { info -> _uiState.update { it.copy(networkInfo = info) } }
+            .launchIn(viewModelScope)
+        observeSettings()
+            .onEach { settings -> _uiState.update { it.copy(speedUnit = settings.speedUnit) } }
             .launchIn(viewModelScope)
     }
 
@@ -57,6 +63,7 @@ class SpeedTestViewModel @Inject constructor(
                     isRunning = true,
                     phase = SpeedTestPhase.PING,
                     networkInfo = it.networkInfo,
+                    speedUnit = it.speedUnit,
                 )
             }
             runSpeedTest()
@@ -103,7 +110,8 @@ class SpeedTestViewModel @Inject constructor(
             uploadLatencyMs = progress.uploadLatencyMs,
         )
         // Gagal simpan tidak boleh membuat UI hasil ikut gagal.
-        runCatching { saveTestResult(result) }
+        val state = _uiState.value
+        runCatching { saveTestResult(result, state.downloadTrace, state.uploadTrace) }
     }
 
     /** Menggabungkan progress terbaru ke state; nilai lama dipertahankan bila field null. */

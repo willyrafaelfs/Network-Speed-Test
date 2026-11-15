@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -36,44 +37,54 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.willyrafaelfs.speedtest.R
+import io.github.willyrafaelfs.speedtest.domain.model.DailyStats
 import io.github.willyrafaelfs.speedtest.domain.model.NetworkType
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestResult
+import io.github.willyrafaelfs.speedtest.domain.model.SpeedUnit
 import io.github.willyrafaelfs.speedtest.presentation.component.GradeBadge
 import io.github.willyrafaelfs.speedtest.presentation.component.InstrumentPanel
 import io.github.willyrafaelfs.speedtest.presentation.component.PrimaryReadout
-import io.github.willyrafaelfs.speedtest.presentation.format.currentLocale
-import io.github.willyrafaelfs.speedtest.presentation.format.formatMbps
+import io.github.willyrafaelfs.speedtest.presentation.component.TrendChart
+import io.github.willyrafaelfs.speedtest.presentation.component.TrendMetric
 import io.github.willyrafaelfs.speedtest.presentation.format.formatMs
+import io.github.willyrafaelfs.speedtest.presentation.format.formatSpeed
+import io.github.willyrafaelfs.speedtest.presentation.format.formatTimestamp
 import io.github.willyrafaelfs.speedtest.presentation.format.labelRes
 import io.github.willyrafaelfs.speedtest.ui.theme.NetraTheme
 import io.github.willyrafaelfs.speedtest.ui.theme.Spacing
-import java.text.DateFormat
-import java.util.Date
 
 @Composable
 fun HistoryScreen(
     onStartTest: () -> Unit,
+    onOpenResult: (Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     HistoryContent(
         state = state,
-        onDelete = viewModel::deleteResult,
-        onClearAll = viewModel::clearAll,
-        onStartTest = onStartTest,
+        actions = HistoryActions(
+            onClearAll = viewModel::clearAll,
+            onStartTest = onStartTest,
+            onOpenResult = onOpenResult,
+            onFilterChange = viewModel::setFilter,
+            onTrendMetricChange = viewModel::setTrendMetric,
+        ),
         modifier = modifier,
     )
 }
 
+/** Callback layar riwayat, dikelompokkan agar content tetap ringkas. */
+data class HistoryActions(
+    val onClearAll: () -> Unit = {},
+    val onStartTest: () -> Unit = {},
+    val onOpenResult: (Long) -> Unit = {},
+    val onFilterChange: (NetworkType?) -> Unit = {},
+    val onTrendMetricChange: (TrendMetric) -> Unit = {},
+)
+
 @Composable
-private fun HistoryContent(
-    state: HistoryUiState,
-    onDelete: (Long) -> Unit,
-    onClearAll: () -> Unit,
-    onStartTest: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
+private fun HistoryContent(state: HistoryUiState, actions: HistoryActions, modifier: Modifier = Modifier) {
     var showClearDialog by rememberSaveable { mutableStateOf(false) }
 
     when {
@@ -81,7 +92,7 @@ private fun HistoryContent(
             CircularProgressIndicator()
         }
 
-        state.isEmpty -> EmptyHistory(onStartTest = onStartTest, modifier = modifier)
+        state.isEmpty -> EmptyHistory(onStartTest = actions.onStartTest, modifier = modifier)
 
         else -> LazyColumn(
             modifier = modifier.fillMaxSize(),
@@ -91,8 +102,24 @@ private fun HistoryContent(
             item(key = "header") {
                 HistoryHeader(count = state.results.size, onClearAll = { showClearDialog = true })
             }
+            item(key = "filters") {
+                FilterRow(selected = state.filter, onSelect = actions.onFilterChange)
+            }
+            item(key = "trend") {
+                TrendPanel(state = state, onMetricChange = actions.onTrendMetricChange)
+            }
+            if (state.results.isEmpty()) {
+                item(key = "filtered-empty") {
+                    Text(
+                        text = stringResource(R.string.history_filtered_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = Spacing.lg),
+                    )
+                }
+            }
             items(state.results, key = { it.id }) { result ->
-                HistoryEntry(result = result, onDelete = { onDelete(result.id) })
+                HistoryEntry(result = result, unit = state.speedUnit, onClick = { actions.onOpenResult(result.id) })
             }
         }
     }
@@ -104,7 +131,7 @@ private fun HistoryContent(
             text = { Text(stringResource(R.string.history_clear_body)) },
             confirmButton = {
                 TextButton(onClick = {
-                    onClearAll()
+                    actions.onClearAll()
                     showClearDialog = false
                 }) { Text(stringResource(R.string.history_clear)) }
             },
@@ -127,6 +154,64 @@ private fun HistoryHeader(count: Int, onClearAll: () -> Unit) {
             )
         }
         TextButton(onClick = onClearAll) { Text(stringResource(R.string.history_clear)) }
+    }
+}
+
+@Composable
+private fun FilterRow(selected: NetworkType?, onSelect: (NetworkType?) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        HistoryUiState.FILTERS.forEach { filter ->
+            FilterChip(
+                selected = filter == selected,
+                onClick = { onSelect(filter) },
+                label = { Text(stringResource(filter?.labelRes() ?: R.string.filter_all)) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun TrendPanel(state: HistoryUiState, onMetricChange: (TrendMetric) -> Unit) {
+    InstrumentPanel {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.trend_title),
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.weight(1f),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                TrendMetric.entries.forEach { metric ->
+                    FilterChip(
+                        selected = metric == state.trendMetric,
+                        onClick = { onMetricChange(metric) },
+                        label = {
+                            Text(
+                                stringResource(
+                                    if (metric ==
+                                        TrendMetric.SPEED
+                                    ) {
+                                        R.string.trend_metric_speed
+                                    } else {
+                                        R.string.trend_metric_ping
+                                    },
+                                ),
+                            )
+                        },
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(Spacing.sm))
+        if (state.hasTrend) {
+            TrendChart(stats = state.dailyStats, metric = state.trendMetric, unit = state.speedUnit)
+        } else {
+            Text(
+                text = stringResource(R.string.trend_empty),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = Spacing.md),
+            )
+        }
     }
 }
 
@@ -156,13 +241,13 @@ private fun EmptyHistory(onStartTest: () -> Unit, modifier: Modifier = Modifier)
 }
 
 @Composable
-private fun HistoryEntry(result: SpeedTestResult, onDelete: () -> Unit, modifier: Modifier = Modifier) {
+private fun HistoryEntry(result: SpeedTestResult, unit: SpeedUnit, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val colors = NetraTheme.colors
-    val mbps = stringResource(R.string.unit_mbps)
+    val speedUnit = stringResource(unit.labelRes())
     val timestamp = formatTimestamp(result.timestamp)
-    val deleteDescription = stringResource(R.string.cd_history_delete, timestamp)
+    val openDescription = stringResource(R.string.cd_open_result, timestamp)
 
-    InstrumentPanel(modifier = modifier) {
+    InstrumentPanel(modifier = modifier.semantics { contentDescription = openDescription }, onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(text = timestamp, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
             Text(
@@ -174,20 +259,21 @@ private fun HistoryEntry(result: SpeedTestResult, onDelete: () -> Unit, modifier
         Row(
             modifier = Modifier.padding(top = Spacing.md),
             horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+            verticalAlignment = Alignment.Bottom,
         ) {
             val compact = NetraTheme.numerals.readoutSmall
             PrimaryReadout(
                 label = stringResource(R.string.metric_download),
-                value = formatMbps(result.downloadMbps),
-                unit = mbps,
+                value = formatSpeed(result.downloadMbps, unit),
+                unit = speedUnit,
                 channelColor = colors.download,
                 valueStyle = compact,
                 modifier = Modifier.weight(1f),
             )
             PrimaryReadout(
                 label = stringResource(R.string.metric_upload),
-                value = formatMbps(result.uploadMbps),
-                unit = mbps,
+                value = formatSpeed(result.uploadMbps, unit),
+                unit = speedUnit,
                 channelColor = colors.upload,
                 valueStyle = compact,
                 modifier = Modifier.weight(1f),
@@ -200,30 +286,11 @@ private fun HistoryEntry(result: SpeedTestResult, onDelete: () -> Unit, modifier
                 valueStyle = compact,
                 modifier = Modifier.weight(1f),
             )
-        }
-        Row(modifier = Modifier.padding(top = Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
             // Hasil lama (sebelum latency saat beban diukur) tidak punya grade.
-            result.bufferbloatGrade?.let { grade ->
-                Text(
-                    text = stringResource(R.string.metric_bufferbloat),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(end = Spacing.sm),
-                )
-                GradeBadge(grade)
-            }
-            Spacer(Modifier.weight(1f))
-            TextButton(onClick = onDelete, modifier = Modifier.semantics { contentDescription = deleteDescription }) {
-                Text(stringResource(R.string.history_delete))
-            }
+            result.bufferbloatGrade?.let { GradeBadge(it) }
         }
     }
 }
-
-/** Tanggal & jam sesuai locale UI; formatter dibuat per panggilan karena DateFormat tidak thread-safe. */
-@Composable
-private fun formatTimestamp(timestamp: Long): String =
-    DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, currentLocale()).format(Date(timestamp))
 
 private fun networkTypeLabel(type: NetworkType): Int = if (type == NetworkType.NONE) {
     R.string.network_unknown
@@ -231,13 +298,14 @@ private fun networkTypeLabel(type: NetworkType): Int = if (type == NetworkType.N
     type.labelRes()
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF0B1220)
+@Preview(showBackground = true, backgroundColor = 0xFF0B1220, heightDp = 900)
 @Composable
 private fun HistoryContentPreview() {
     NetraTheme(darkTheme = true) {
         HistoryContent(
             state = HistoryUiState(
                 isLoading = false,
+                dailyStats = List(6) { DailyStats("2026-11-${it + 10}", 60.0 + it * 5, 9.0 + it, 90.0 - it * 4, 2) },
                 results = listOf(
                     SpeedTestResult(
                         id = 1,
@@ -253,9 +321,7 @@ private fun HistoryContentPreview() {
                     ),
                 ),
             ),
-            onDelete = {},
-            onClearAll = {},
-            onStartTest = {},
+            actions = HistoryActions(),
         )
     }
 }

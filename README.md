@@ -35,7 +35,12 @@ Javanese: an instrument for seeing how your connection behaves.
   scroll at large font sizes
 - **Network info**: connection type (Wi-Fi / cellular / Ethernet / VPN), SSID or carrier name, and public IP,
   updated live as the network changes
-- **History**: every result is stored locally with Room, and can be deleted one by one or all at once
+- **History with trends**: every result is stored locally with Room, including its speed trace. A daily-average
+  chart shows download, upload, or ping over time, filtered by Wi-Fi or mobile data
+- **Result details & sharing**: open any result to see its chart and an explanation of the latency rise, then
+  share it as an image (the Wi-Fi name and IP address are never included)
+- **Settings**: test duration, number of parallel connections, Mbps or MB/s, light/dark/system theme, and
+  wallpaper colors on Android 12+
 - **Cancellable**: stopping a test cancels the running measurement and closes its connections
 
 ## Tech stack
@@ -47,7 +52,7 @@ Javanese: an instrument for seeing how your connection behaves.
 | Architecture | Clean Architecture (domain / data / presentation), MVVM, unidirectional data flow |
 | Async | Kotlin Coroutines & Flow (`callbackFlow`, `flatMapLatest`, `stateIn`) |
 | Networking | OkHttp 5 |
-| Persistence | Room (with exported schemas) |
+| Persistence | Room (exported schemas, auto-migrations with tests, one-to-many relation), DataStore Preferences |
 | DI | Hilt |
 | Quality | Spotless + ktlint (with Compose rules), Detekt, Android Lint (warnings as errors) |
 | CI | GitHub Actions & GitLab CI |
@@ -134,7 +139,9 @@ app/src/main/java/io/github/willyrafaelfs/speedtest/
 ├── presentation/
 │   ├── navigation/  # app scaffold, type-safe routes, adaptive navigation
 │   ├── speedtest/   # test screen, ViewModel, UI state, location permission flow
-│   ├── history/     # history screen, ViewModel, UI state
+│   ├── history/     # history list, daily trends, network filter
+│   ├── detail/      # result details and share-as-image
+│   ├── settings/    # settings screen backed by DataStore
 │   ├── component/   # instrument dial, live chart, readouts, panels
 │   └── format/      # locale-aware number formatting, labels
 └── ui/theme/        # Netra design system: colors, type, shapes, spacing
@@ -146,7 +153,7 @@ app/src/main/java/io/github/willyrafaelfs/speedtest/
 - [x] More accurate engine: parallel streams, ramp-up exclusion, loaded latency (bufferbloat grade)
 - [ ] Benchmark against Ookla Speedtest and Cloudflare on the same network
 - [x] UI refresh: custom design system, live throughput chart, English & Indonesian localization
-- [ ] History details with trend charts, shareable result card, and settings
+- [x] History details with trend charts, shareable result card, and settings
 - [ ] Broader test coverage (ViewModel, engine, Room, Compose UI and screenshot tests)
 - [ ] Signed release builds published to GitHub & GitLab Releases
 

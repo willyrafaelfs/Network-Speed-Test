@@ -6,6 +6,7 @@ import io.github.willyrafaelfs.speedtest.data.remote.FakeSpeedServer
 import io.github.willyrafaelfs.speedtest.data.remote.PingTester
 import io.github.willyrafaelfs.speedtest.data.remote.SpeedTestConfig
 import io.github.willyrafaelfs.speedtest.data.remote.UploadSpeedTester
+import io.github.willyrafaelfs.speedtest.domain.model.MeasurementOptions
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestError
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestException
 import kotlinx.coroutines.flow.toList
@@ -45,14 +46,18 @@ class SpeedTestRepositoryImplTest {
     fun `status HTTP gagal saat download menjadi ServerError`() = runTest {
         server.statusOverrides["/down"] = 503
 
-        assertError(SpeedTestError.ServerError(503)) { repository(server.config()).measureDownload().toList() }
+        assertError(SpeedTestError.ServerError(503)) {
+            repository(server.config()).measureDownload(MeasurementOptions()).toList()
+        }
     }
 
     @Test
     fun `status HTTP gagal saat upload menjadi ServerError`() = runTest {
         server.statusOverrides["/up"] = 429
 
-        assertError(SpeedTestError.ServerError(429)) { repository(server.config()).measureUpload().toList() }
+        assertError(SpeedTestError.ServerError(429)) {
+            repository(server.config()).measureUpload(MeasurementOptions()).toList()
+        }
     }
 
     private suspend fun assertError(expected: SpeedTestError, block: suspend () -> Unit) {

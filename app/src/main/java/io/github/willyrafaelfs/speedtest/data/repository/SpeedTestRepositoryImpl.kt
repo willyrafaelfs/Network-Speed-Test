@@ -4,6 +4,7 @@ import io.github.willyrafaelfs.speedtest.data.remote.DownloadSpeedTester
 import io.github.willyrafaelfs.speedtest.data.remote.PingTester
 import io.github.willyrafaelfs.speedtest.data.remote.UploadSpeedTester
 import io.github.willyrafaelfs.speedtest.data.remote.toSpeedTestException
+import io.github.willyrafaelfs.speedtest.domain.model.MeasurementOptions
 import io.github.willyrafaelfs.speedtest.domain.model.PingResult
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedSample
 import io.github.willyrafaelfs.speedtest.domain.repository.SpeedTestRepository
@@ -30,9 +31,9 @@ class SpeedTestRepositoryImpl @Inject constructor(
         throw e.toSpeedTestException()
     }
 
-    override fun measureDownload(): Flow<SpeedSample> =
-        downloadTester.measure().catch { throw it.toSpeedTestException() }
+    override fun measureDownload(options: MeasurementOptions): Flow<SpeedSample> =
+        downloadTester.measure(options).catch { throw it.toSpeedTestException() }
 
-    override fun measureUpload(): Flow<SpeedSample> =
-        uploadTester.measure().catch { throw it.toSpeedTestException() }
+    override fun measureUpload(options: MeasurementOptions): Flow<SpeedSample> =
+        uploadTester.measure(options).catch { throw it.toSpeedTestException() }
 }

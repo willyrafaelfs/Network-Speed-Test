@@ -38,17 +38,18 @@ import io.github.willyrafaelfs.speedtest.R
 import io.github.willyrafaelfs.speedtest.domain.model.NetworkInfo
 import io.github.willyrafaelfs.speedtest.domain.model.NetworkType
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestPhase
+import io.github.willyrafaelfs.speedtest.domain.model.TracePoint
 import io.github.willyrafaelfs.speedtest.presentation.component.GradeBadge
 import io.github.willyrafaelfs.speedtest.presentation.component.InstrumentDial
 import io.github.willyrafaelfs.speedtest.presentation.component.InstrumentPanel
-import io.github.willyrafaelfs.speedtest.presentation.component.LiveTraceChart
 import io.github.willyrafaelfs.speedtest.presentation.component.LocationAccess
 import io.github.willyrafaelfs.speedtest.presentation.component.NetworkPanel
 import io.github.willyrafaelfs.speedtest.presentation.component.PhaseStepper
 import io.github.willyrafaelfs.speedtest.presentation.component.PrimaryReadout
 import io.github.willyrafaelfs.speedtest.presentation.component.ReadoutDivider
 import io.github.willyrafaelfs.speedtest.presentation.component.ReadoutRow
-import io.github.willyrafaelfs.speedtest.presentation.format.formatMbps
+import io.github.willyrafaelfs.speedtest.presentation.component.ResultReadoutsPanel
+import io.github.willyrafaelfs.speedtest.presentation.component.ThroughputChart
 import io.github.willyrafaelfs.speedtest.presentation.format.formatMs
 import io.github.willyrafaelfs.speedtest.presentation.format.labelRes
 import io.github.willyrafaelfs.speedtest.presentation.format.message
@@ -198,6 +199,7 @@ private fun ColumnScope.InstrumentColumnContent(
             speedMbps = (if (state.isFinished) state.downloadMbps ?: 0.0 else state.currentSpeedMbps).toFloat(),
             channelColor = channelColor(state.phase),
             caption = stringResource(state.phase.labelRes()),
+            unit = state.speedUnit,
             maxSize = dialMaxSize,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -244,59 +246,20 @@ private fun ColumnScope.DetailsColumnContent(
     onOpenSettings: () -> Unit,
 ) {
     InstrumentPanel {
-        LiveTraceChart(
+        ThroughputChart(
             download = state.downloadTrace,
             upload = state.uploadTrace,
             highlightUpload = state.phase == SpeedTestPhase.UPLOAD || state.uploadTrace.isNotEmpty(),
+            unit = state.speedUnit,
         )
     }
-    ResultsPanel(state)
+    ResultReadoutsPanel(metrics = state.metrics, unit = state.speedUnit)
     NetworkPanel(
         networkInfo = state.networkInfo,
         locationAccess = locationAccess,
         onRequestLocation = onRequestLocation,
         onOpenSettings = onOpenSettings,
     )
-}
-
-@Composable
-private fun ResultsPanel(state: SpeedTestUiState) {
-    val colors = NetraTheme.colors
-    val mbps = stringResource(R.string.unit_mbps)
-    val ms = stringResource(R.string.unit_ms)
-    InstrumentPanel {
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
-            PrimaryReadout(
-                label = stringResource(R.string.metric_download),
-                value = formatMbps(state.downloadMbps),
-                unit = mbps,
-                channelColor = colors.download,
-                modifier = Modifier.weight(1f),
-            )
-            PrimaryReadout(
-                label = stringResource(R.string.metric_upload),
-                value = formatMbps(state.uploadMbps),
-                unit = mbps,
-                channelColor = colors.upload,
-                modifier = Modifier.weight(1f),
-            )
-        }
-        ReadoutDivider()
-        ReadoutRow(stringResource(R.string.metric_ping), formatMs(state.pingMs), ms, channelColor = colors.latency)
-        ReadoutRow(stringResource(R.string.metric_jitter), formatMs(state.jitterMs), ms)
-        ReadoutRow(stringResource(R.string.metric_loaded_download), formatMs(state.downloadLatencyMs), ms)
-        ReadoutRow(stringResource(R.string.metric_loaded_upload), formatMs(state.uploadLatencyMs), ms)
-        ReadoutDivider()
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = stringResource(R.string.metric_bufferbloat),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
-            )
-            GradeBadge(state.bufferbloatGrade)
-        }
-    }
 }
 
 @Composable

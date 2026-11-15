@@ -1,5 +1,6 @@
 package io.github.willyrafaelfs.speedtest.data.remote
 
+import io.github.willyrafaelfs.speedtest.domain.model.MeasurementOptions
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedSample
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
@@ -27,7 +28,9 @@ class DownloadSpeedTester @Inject constructor(
         .header("Accept-Encoding", "identity")
         .build()
 
-    fun measure(): Flow<SpeedSample> = measureThroughput(config, pingTester, DownloadWorkload())
+    /** @param options durasi & jumlah koneksi dari Settings; null = pakai [SpeedTestConfig] apa adanya. */
+    fun measure(options: MeasurementOptions? = null): Flow<SpeedSample> =
+        measureThroughput(options?.let(config::withOptions) ?: config, pingTester, DownloadWorkload())
 
     private inner class DownloadWorkload : ThroughputWorkload {
         override fun runStream(streamIndex: Int, run: PhaseRun) {

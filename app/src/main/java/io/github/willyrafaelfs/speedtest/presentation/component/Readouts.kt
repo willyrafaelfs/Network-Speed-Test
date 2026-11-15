@@ -31,19 +31,28 @@ import io.github.willyrafaelfs.speedtest.presentation.format.label
 import io.github.willyrafaelfs.speedtest.ui.theme.NetraTheme
 import io.github.willyrafaelfs.speedtest.ui.theme.Spacing
 
-/** Wadah panel instrumen: permukaan sedikit terangkat dengan garis tepi tipis. */
+/** Wadah panel instrumen: permukaan sedikit terangkat dengan garis tepi tipis; bisa diketuk bila [onClick] diisi. */
 @Composable
 fun InstrumentPanel(
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-    ) {
-        Column(modifier = Modifier.padding(Spacing.lg), content = content)
+    val shape = MaterialTheme.shapes.large
+    val color = MaterialTheme.colorScheme.surfaceContainerLow
+    val border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    val inner: @Composable () -> Unit = { Column(modifier = Modifier.padding(Spacing.lg), content = content) }
+    if (onClick == null) {
+        Surface(modifier = modifier.fillMaxWidth(), shape = shape, color = color, border = border, content = inner)
+    } else {
+        Surface(
+            onClick = onClick,
+            modifier = modifier.fillMaxWidth(),
+            shape = shape,
+            color = color,
+            border = border,
+            content = inner,
+        )
     }
 }
 
