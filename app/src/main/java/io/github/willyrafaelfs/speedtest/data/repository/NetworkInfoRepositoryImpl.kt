@@ -107,7 +107,7 @@ class NetworkInfoRepositoryImpl @Inject constructor(
         }
         val ssid = wifiInfo?.ssid?.removeSurrounding("\"")
         return ssid?.takeIf {
-            it.isNotBlank() && it != WifiManager.UNKNOWN_SSID && it != "<unknown ssid>"
+            it.isNotBlank() && it != UNKNOWN_SSID
         }
     }
 
@@ -116,4 +116,12 @@ class NetworkInfoRepositoryImpl @Inject constructor(
             if (response.isSuccessful) response.body.string().trim().ifBlank { null } else null
         }
     }.getOrNull()
+
+    private companion object {
+        /**
+         * Nilai pengganti SSID dari sistem bila izin tidak ada. Ditulis sebagai literal
+         * karena konstanta WifiManager.UNKNOWN_SSID baru tersedia di API 30 (minSdk 24).
+         */
+        const val UNKNOWN_SSID = "<unknown ssid>"
+    }
 }

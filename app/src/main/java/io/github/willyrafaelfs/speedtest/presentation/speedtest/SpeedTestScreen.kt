@@ -53,16 +53,23 @@ fun SpeedTestScreen(
 
     val context = LocalContext.current
     var hasLocationPermission by remember { mutableStateOf(hasFineLocation(context)) }
+    // FINE dan COARSE diminta bersamaan (wajib sejak Android 12). SSID hanya bisa
+    // dibaca dengan lokasi presisi, jadi yang menentukan adalah hasil FINE.
     val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted -> hasLocationPermission = granted }
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { results -> hasLocationPermission = results[Manifest.permission.ACCESS_FINE_LOCATION] == true }
 
     SpeedTestContent(
         state = state,
         snackbarHostState = snackbarHostState,
         canReadWifiName = hasLocationPermission,
         onRequestLocationPermission = {
-            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            permissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                ),
+            )
         },
         onStart = viewModel::startTest,
         onCancel = viewModel::cancelTest,

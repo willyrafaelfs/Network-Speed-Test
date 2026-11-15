@@ -177,9 +177,10 @@ private fun MetricInline(label: String, value: String, unit: String) {
     }
 }
 
-private val dateFormatter = SimpleDateFormat("dd MMM yyyy • HH:mm", Locale.getDefault())
-
-private fun formatTimestamp(timestamp: Long): String = dateFormatter.format(Date(timestamp))
+// Formatter dibuat per pemanggilan agar mengikuti locale terkini bila user menggantinya
+// saat aplikasi berjalan (SimpleDateFormat juga tidak thread-safe untuk dibagi).
+private fun formatTimestamp(timestamp: Long): String =
+    SimpleDateFormat("dd MMM yyyy • HH:mm", Locale.getDefault()).format(Date(timestamp))
 
 private fun networkLabel(result: SpeedTestResult): String = result.networkName ?: when (result.networkType) {
     NetworkType.WIFI -> "WiFi"

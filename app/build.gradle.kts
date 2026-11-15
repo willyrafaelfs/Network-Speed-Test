@@ -36,6 +36,19 @@ android {
         compose = true
         buildConfig = true
     }
+    lint {
+        // Semua temuan lint dianggap error agar CI menolak regresi kualitas.
+        warningsAsErrors = true
+        abortOnError = true
+        // Cek "versi baru tersedia" dimatikan: hasilnya berubah sendiri tiap ada rilis
+        // library baru sehingga CI bisa merah tanpa ada perubahan kode.
+        disable += setOf(
+            "GradleDependency",
+            "NewerVersionAvailable",
+            "AndroidGradlePluginVersion",
+            "OldTargetApi",
+        )
+    }
 }
 
 dependencies {
