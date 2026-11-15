@@ -1,6 +1,8 @@
 package io.github.willyrafaelfs.speedtest.data.remote
 
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedSample
+import java.io.IOException
+import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -8,8 +10,6 @@ import kotlinx.coroutines.flow.flowOn
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okio.Buffer
-import java.io.IOException
-import javax.inject.Inject
 
 /**
  * Mengukur kecepatan download dengan mengunduh data dari [SpeedTestConfig.downloadUrl]

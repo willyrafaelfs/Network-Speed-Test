@@ -1,15 +1,15 @@
 package io.github.willyrafaelfs.speedtest.data.di
 
-import io.github.willyrafaelfs.speedtest.BuildConfig
-import io.github.willyrafaelfs.speedtest.data.remote.SpeedTestConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
+import io.github.willyrafaelfs.speedtest.BuildConfig
+import io.github.willyrafaelfs.speedtest.data.remote.SpeedTestConfig
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 
 /** Menyediakan OkHttpClient dan konfigurasi test untuk seluruh aplikasi. */
 @Module
@@ -33,12 +33,15 @@ object NetworkModule {
             }
         }
         return OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(IO_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .writeTimeout(IO_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             // Durasi total dikendalikan manual oleh engine, jadi call timeout dimatikan.
             .callTimeout(0, TimeUnit.SECONDS)
             .addInterceptor(logging)
             .build()
     }
 }
+
+private const val CONNECT_TIMEOUT_SECONDS = 15L
+private const val IO_TIMEOUT_SECONDS = 30L

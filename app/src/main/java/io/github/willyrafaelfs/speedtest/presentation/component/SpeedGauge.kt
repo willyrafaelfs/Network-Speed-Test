@@ -19,8 +19,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
@@ -115,26 +115,22 @@ fun SpeedGauge(
  */
 private fun speedToFraction(speed: Float): Float {
     val bp = SCALE_BREAKPOINTS
-    if (speed <= bp.first()) return 0f
-    if (speed >= bp.last()) return 1f
     val segments = bp.size - 1
-    for (i in 0 until segments) {
-        if (speed < bp[i + 1]) {
-            val within = (speed - bp[i]) / (bp[i + 1] - bp[i])
-            return (i + within) / segments
-        }
-    }
-    return 1f
+    val clamped = speed.coerceIn(bp.first(), bp.last())
+    // Segmen pertama yang batas atasnya melewati kecepatan; tidak ada = mentok di ujung skala.
+    val segment = (0 until segments).firstOrNull { clamped < bp[it + 1] } ?: return 1f
+    val within = (clamped - bp[segment]) / (bp[segment + 1] - bp[segment])
+    return (segment + within) / segments
 }
 
 private fun speedColor(speed: Float): Color = when {
-    speed < 10f -> SlowColor
-    speed < 50f -> MediumColor
+    speed < SLOW_THRESHOLD_MBPS -> SlowColor
+    speed < MEDIUM_THRESHOLD_MBPS -> MediumColor
     else -> FastColor
 }
 
 private fun labelText(value: Float): String =
-    if (value >= 1000f) "1k" else value.toInt().toString()
+    if (value >= GIGABIT_MBPS) "1k" else value.toInt().toString()
 
 // Breakpoint skala non-linear (Mbps).
 private val SCALE_BREAKPOINTS = listOf(0f, 25f, 50f, 100f, 250f, 500f, 1000f)
@@ -143,6 +139,11 @@ private val SCALE_BREAKPOINTS = listOf(0f, 25f, 50f, 100f, 250f, 500f, 1000f)
 private val SlowColor = Color(0xFFE53935)
 private val MediumColor = Color(0xFFFB8C00)
 private val FastColor = Color(0xFF2E7D32)
+
+// Batas warna indikator (Mbps): < 10 lambat, < 50 sedang, selebihnya cepat.
+private const val SLOW_THRESHOLD_MBPS = 10f
+private const val MEDIUM_THRESHOLD_MBPS = 50f
+private const val GIGABIT_MBPS = 1000f
 
 private const val START_ANGLE = 135f
 private const val SWEEP_ANGLE = 270f

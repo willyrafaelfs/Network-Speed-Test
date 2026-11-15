@@ -8,23 +8,23 @@ import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.telephony.TelephonyManager
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.willyrafaelfs.speedtest.data.remote.SpeedTestConfig
 import io.github.willyrafaelfs.speedtest.domain.model.NetworkInfo
 import io.github.willyrafaelfs.speedtest.domain.model.NetworkType
 import io.github.willyrafaelfs.speedtest.domain.repository.NetworkInfoRepository
-import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.flatMapLatest
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import javax.inject.Inject
 
 /**
  * Membaca informasi koneksi lewat ConnectivityManager dan memancarkan ulang
@@ -46,8 +46,12 @@ class NetworkInfoRepositoryImpl @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeNetworkInfo(): Flow<NetworkInfo> = callbackFlow {
         val callback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) { trySend(currentInfo()) }
-            override fun onLost(network: Network) { trySend(currentInfo()) }
+            override fun onAvailable(network: Network) {
+                trySend(currentInfo())
+            }
+            override fun onLost(network: Network) {
+                trySend(currentInfo())
+            }
             override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
                 trySend(currentInfo())
             }

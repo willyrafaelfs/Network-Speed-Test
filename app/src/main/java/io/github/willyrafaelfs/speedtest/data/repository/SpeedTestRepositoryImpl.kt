@@ -6,8 +6,8 @@ import io.github.willyrafaelfs.speedtest.data.remote.UploadSpeedTester
 import io.github.willyrafaelfs.speedtest.domain.model.PingResult
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedSample
 import io.github.willyrafaelfs.speedtest.domain.repository.SpeedTestRepository
-import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Implementasi [SpeedTestRepository] yang mendelegasikan ke masing-masing engine.

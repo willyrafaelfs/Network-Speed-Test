@@ -1,6 +1,9 @@
 package io.github.willyrafaelfs.speedtest.data.remote
 
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedSample
+import java.io.IOException
+import javax.inject.Inject
+import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -11,9 +14,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
 import okio.BufferedSink
-import java.io.IOException
-import javax.inject.Inject
-import kotlin.random.Random
 
 /**
  * Mengukur kecepatan upload dengan mengirim data acak ke [SpeedTestConfig.uploadUrl]
@@ -56,7 +56,8 @@ class UploadSpeedTester @Inject constructor(
                         sink.flush() // paksa terkirim agar byte terhitung = byte di jaringan
                         val intervalSec = (now - lastSampleNanos).coerceAtLeast(1L) / NANOS_PER_SEC
                         val elapsedSec = (now - startNanos).coerceAtLeast(1L) / NANOS_PER_SEC
-                        val instant = (totalBytes - lastSampleBytes) * BITS_PER_BYTE / intervalSec / BITS_PER_MBIT
+                        val intervalBytes = totalBytes - lastSampleBytes
+                        val instant = intervalBytes * BITS_PER_BYTE / intervalSec / BITS_PER_MBIT
                         val average = totalBytes * BITS_PER_BYTE / elapsedSec / BITS_PER_MBIT
                         val progress = ((now - startNanos).toFloat() / durationNanos).coerceIn(0f, 1f)
                         trySend(SpeedSample(instant, average, progress))
@@ -71,6 +72,8 @@ class UploadSpeedTester @Inject constructor(
         val call = client.newCall(Request.Builder().url(config.uploadUrl).post(body).build())
 
         // execute() blocking → jalankan di IO agar tidak memblokir collector.
+        // Exception apa pun sengaja ditangkap untuk diteruskan apa adanya ke collector.
+        @Suppress("TooGenericExceptionCaught")
         val job = launch(Dispatchers.IO) {
             try {
                 call.execute().use { response ->

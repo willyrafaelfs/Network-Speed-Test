@@ -3,9 +3,9 @@ package io.github.willyrafaelfs.speedtest.domain.usecase
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestPhase
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestProgress
 import io.github.willyrafaelfs.speedtest.domain.repository.SpeedTestRepository
+import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import javax.inject.Inject
 
 /**
  * Mengorkestrasi satu sesi test penuh: ping → download → upload, dan

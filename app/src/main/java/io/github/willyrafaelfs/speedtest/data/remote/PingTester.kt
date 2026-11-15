@@ -1,15 +1,15 @@
 package io.github.willyrafaelfs.speedtest.data.remote
 
 import io.github.willyrafaelfs.speedtest.domain.model.PingResult
+import java.io.IOException
+import javax.inject.Inject
+import kotlin.coroutines.coroutineContext
+import kotlin.math.abs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.io.IOException
-import javax.inject.Inject
-import kotlin.coroutines.coroutineContext
-import kotlin.math.abs
 
 /**
  * Mengukur latency & jitter dengan melakukan beberapa kali request HTTP ringan
@@ -54,7 +54,8 @@ class PingTester @Inject constructor(
                 response.body.bytes() // konsumsi body sampai habis → RTT lengkap
                 (System.nanoTime() - start) / NANOS_PER_MILLI
             }
-        } catch (e: IOException) {
+        } catch (ignored: IOException) {
+            // Request gagal dihitung sebagai sampel hilang, bukan error fatal.
             null
         }
     }

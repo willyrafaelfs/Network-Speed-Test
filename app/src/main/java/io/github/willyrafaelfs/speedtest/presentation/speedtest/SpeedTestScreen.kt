@@ -1,5 +1,9 @@
 package io.github.willyrafaelfs.speedtest.presentation.speedtest
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,24 +21,21 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.runtime.LaunchedEffect
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestPhase
 import io.github.willyrafaelfs.speedtest.presentation.component.MetricCard
 import io.github.willyrafaelfs.speedtest.presentation.component.NetworkInfoCard
@@ -73,7 +74,7 @@ fun SpeedTestScreen(
         },
         onStart = viewModel::startTest,
         onCancel = viewModel::cancelTest,
-        onErrorShown = viewModel::dismissError,
+        onErrorDismiss = viewModel::dismissError,
         modifier = modifier,
     )
 }
@@ -95,13 +96,16 @@ private fun SpeedTestContent(
     onRequestLocationPermission: () -> Unit,
     onStart: () -> Unit,
     onCancel: () -> Unit,
-    onErrorShown: () -> Unit,
+    onErrorDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Simpan callback terbaru agar effect (yang hanya restart saat pesan berubah)
+    // tidak memanggil lambda lama bila parent recompose dengan lambda baru.
+    val currentOnErrorDismiss by rememberUpdatedState(onErrorDismiss)
     LaunchedEffect(state.errorMessage) {
         state.errorMessage?.let { message ->
             snackbarHostState.showSnackbar(message)
-            onErrorShown()
+            currentOnErrorDismiss()
         }
     }
 
@@ -233,7 +237,7 @@ private fun SpeedTestContentPreview() {
             onRequestLocationPermission = {},
             onStart = {},
             onCancel = {},
-            onErrorShown = {},
+            onErrorDismiss = {},
         )
     }
 }

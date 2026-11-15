@@ -5,9 +5,9 @@ import io.github.willyrafaelfs.speedtest.data.local.entity.toDomain
 import io.github.willyrafaelfs.speedtest.data.local.entity.toEntity
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestResult
 import io.github.willyrafaelfs.speedtest.domain.repository.HistoryRepository
+import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
 
 /**
  * Implementasi [HistoryRepository] berbasis Room. Memetakan entity <-> domain

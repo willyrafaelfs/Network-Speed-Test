@@ -2,13 +2,13 @@ package io.github.willyrafaelfs.speedtest.data.di
 
 import android.content.Context
 import androidx.room.Room
-import io.github.willyrafaelfs.speedtest.data.local.SpeedTestDatabase
-import io.github.willyrafaelfs.speedtest.data.local.dao.SpeedTestResultDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.github.willyrafaelfs.speedtest.data.local.SpeedTestDatabase
+import io.github.willyrafaelfs.speedtest.data.local.dao.SpeedTestResultDao
 import javax.inject.Singleton
 
 /** Menyediakan instance Room database dan DAO-nya. */

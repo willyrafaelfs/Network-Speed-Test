@@ -2,13 +2,14 @@ package io.github.willyrafaelfs.speedtest.presentation.speedtest
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestPhase
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestProgress
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestResult
 import io.github.willyrafaelfs.speedtest.domain.usecase.GetNetworkInfoUseCase
 import io.github.willyrafaelfs.speedtest.domain.usecase.RunSpeedTestUseCase
 import io.github.willyrafaelfs.speedtest.domain.usecase.SaveTestResultUseCase
-import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +19,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * Mengorkestrasi satu sesi test dan memaparkan [SpeedTestUiState] ke UI.
