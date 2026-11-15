@@ -8,6 +8,8 @@ plugins {
     alias(libs.plugins.room) apply false
     alias(libs.plugins.spotless)
     alias(libs.plugins.detekt)
+    alias(libs.plugins.roborazzi) apply false
+    alias(libs.plugins.kover) apply false
 }
 
 // Format kode: ktlint (+ aturan khusus Jetpack Compose) untuk semua file Kotlin & skrip Gradle.

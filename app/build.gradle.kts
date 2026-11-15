@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.room)
+    alias(libs.plugins.roborazzi)
+    alias(libs.plugins.kover)
 }
 
 android {
@@ -41,6 +43,10 @@ android {
     androidResources {
         // Bahasa per-aplikasi (Android 13+): daftar locale dibuat otomatis dari folder values-*.
         generateLocaleConfig = true
+    }
+    testOptions {
+        // Robolectric butuh resource Android (string, font, tema) saat test JVM.
+        unitTests.isIncludeAndroidResources = true
     }
     lint {
         // Semua temuan lint dianggap error agar CI menolak regresi kualitas.
@@ -114,6 +120,19 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     // Server HTTP lokal untuk menguji engine download/upload/ping tanpa internet.
     testImplementation(libs.okhttp.mockwebserver)
+    // Flow assertion untuk ViewModel.
+    testImplementation(libs.turbine)
+    // Android di JVM: Room in-memory, Compose UI test, dan screenshot test tanpa emulator.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.junit)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.hilt.android.testing)
+    kspTest(libs.hilt.compiler)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.roborazzi.junit.rule)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
@@ -123,4 +142,96 @@ dependencies {
     androidTestImplementation(libs.androidx.room.testing)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+}
+
+// Coverage (Kover). Kode hasil generator (Hilt, Room, Compose) dan pratinjau dikecualikan
+// agar angka mencerminkan kode yang memang ditulis tangan.
+kover {
+    reports {
+        filters {
+            excludes {
+                annotatedBy(
+                    "androidx.compose.ui.tooling.preview.Preview",
+                    "dagger.Module",
+                    "dagger.hilt.android.HiltAndroidApp",
+                    "javax.annotation.processing.Generated",
+                )
+                classes(
+                    "*.BuildConfig",
+                    "*.R",
+                    "*.R\$*",
+                    "*_Factory",
+                    "*_Factory\$*",
+                    "*_HiltModules*",
+                    "*_MembersInjector",
+                    "*Hilt_*",
+                    "*_Impl",
+                    "*_Impl\$*",
+                    "*ComposableSingletons*",
+                    "hilt_aggregated_deps.*",
+                    "dagger.hilt.internal.aggregatedroot.codegen.*",
+                )
+            }
+        }
+    }
+}
+
+// Ringkasan coverage per layer dari laporan XML Kover, dengan target minimum dari rencana
+// portfolio. Dipakai CI: tabel dicetak ke log (GitLab membaca baris "Total line coverage")
+// dan task gagal bila salah satu layer di bawah target.
+tasks.register("coverageSummary") {
+    group = "verification"
+    description = "Mencetak dan memverifikasi coverage baris per layer (domain, data, ViewModel)."
+    dependsOn("koverXmlReportDebug")
+    val report = layout.buildDirectory.file("reports/kover/reportDebug.xml")
+    inputs.file(report)
+    doLast {
+        val base = "io/github/willyrafaelfs/speedtest/"
+        val layers = linkedMapOf<String, Pair<Double, (String) -> Boolean>>(
+            "Domain" to (90.0 to { name -> name.startsWith(base + "domain/") }),
+            "Data" to (70.0 to { name -> name.startsWith(base + "data/") && !name.startsWith(base + "data/di/") }),
+            "ViewModel" to (
+                80.0 to { name ->
+                    name.substringAfterLast('/').substringBefore('$').endsWith("ViewModel")
+                }
+                ),
+        )
+        val totals = mutableMapOf<String, IntArray>()
+        val document = javax.xml.parsers.DocumentBuilderFactory.newInstance().apply {
+            // Laporan JaCoCo merujuk DTD eksternal; jangan diunduh.
+            setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+        }.newDocumentBuilder().parse(report.get().asFile)
+        val classes = document.getElementsByTagName("class")
+        for (i in 0 until classes.length) {
+            val element = classes.item(i) as org.w3c.dom.Element
+            val name = element.getAttribute("name")
+            val counters = element.getElementsByTagName("counter")
+            for (j in 0 until counters.length) {
+                val counter = counters.item(j) as org.w3c.dom.Element
+                if (counter.getAttribute("type") != "LINE") continue
+                val missed = counter.getAttribute("missed").toInt()
+                val covered = counter.getAttribute("covered").toInt()
+                val keys = layers.filterValues { it.second(name) }.keys + "Total"
+                keys.forEach { key ->
+                    val sum = totals.getOrPut(key) { IntArray(2) }
+                    sum[0] += covered
+                    sum[1] += missed
+                }
+            }
+        }
+        fun percent(key: String): Double {
+            val (covered, missed) = totals[key]?.let { it[0] to it[1] } ?: (0 to 0)
+            return if (covered + missed == 0) 0.0 else covered * 100.0 / (covered + missed)
+        }
+        val failures = mutableListOf<String>()
+        println("Layer       Coverage  Target")
+        layers.forEach { (key, value) ->
+            val actual = percent(key)
+            val ok = actual >= value.first
+            println("%-10s %8.1f%%  %5.0f%% %s".format(key, actual, value.first, if (ok) "OK" else "BELOW"))
+            if (!ok) failures += "%s %.1f%% < %.0f%%".format(key, actual, value.first)
+        }
+        println("Total line coverage: %.1f%%".format(percent("Total")))
+        if (failures.isNotEmpty()) throw GradleException("Coverage di bawah target: " + failures.joinToString())
+    }
 }
