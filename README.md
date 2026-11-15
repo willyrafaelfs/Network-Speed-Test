@@ -4,6 +4,7 @@
 
 [![CI](https://github.com/willyrafaelfs/Network-Speed-Test/actions/workflows/ci.yml/badge.svg)](https://github.com/willyrafaelfs/Network-Speed-Test/actions/workflows/ci.yml)
 [![GitLab pipeline](https://gitlab.com/willyrafaelfs/Network-Speed-Test/badges/main/pipeline.svg)](https://gitlab.com/willyrafaelfs/Network-Speed-Test/-/pipelines)
+[![Coverage](https://gitlab.com/willyrafaelfs/Network-Speed-Test/badges/main/coverage.svg)](https://gitlab.com/willyrafaelfs/Network-Speed-Test/-/pipelines)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4-7F52FF?logo=kotlin&logoColor=white)
 ![Min SDK](https://img.shields.io/badge/minSdk-24-3DDC84?logo=android&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -54,7 +55,8 @@ Javanese: an instrument for seeing how your connection behaves.
 | Networking | OkHttp 5 |
 | Persistence | Room (exported schemas, auto-migrations with tests, one-to-many relation), DataStore Preferences |
 | DI | Hilt |
-| Quality | Spotless + ktlint (with Compose rules), Detekt, Android Lint (warnings as errors) |
+| Quality | Spotless + ktlint (with Compose rules), Detekt, Android Lint (warnings as errors), Kover |
+| Testing | JUnit, kotlinx-coroutines-test, Turbine, MockWebServer, Robolectric, Compose UI test, Hilt testing, Roborazzi |
 | CI | GitHub Actions & GitLab CI |
 
 ## Architecture
@@ -122,9 +124,27 @@ Or open the project in Android Studio and run the `app` configuration.
 ### Quality checks
 
 ```bash
-./gradlew spotlessApply        # auto-format Kotlin & Gradle scripts
-./gradlew spotlessCheck detekt lintDebug testDebugUnitTest   # what CI runs
+./gradlew spotlessApply                     # auto-format Kotlin & Gradle scripts
+./gradlew spotlessCheck detekt lintDebug    # static analysis
+./gradlew verifyRoborazziDebug :app:coverageSummary   # tests + screenshot diff + coverage, as in CI
+./gradlew recordRoborazziDebug              # update screenshot baselines after an intended UI change
 ```
+
+## Testing
+
+Everything runs on the JVM, so CI needs no emulator. Robolectric provides the Android framework.
+
+| Layer | What is tested | How |
+|---|---|---|
+| Domain | Use cases, bufferbloat grading, error mapping | Plain JUnit with fakes |
+| Engine | Throughput math, download/upload/ping against a bandwidth-throttled server, cancellation, HTTP errors | MockWebServer |
+| Data | Room DAO (relations, daily aggregates, cascade delete), DataStore settings | Robolectric, in-memory Room, temporary DataStore |
+| Migrations | Schema v1 to v3 | `MigrationTestHelper` (instrumented, `androidTest`) |
+| ViewModels | Success, phase order, cancel, error, failed save, filters | Turbine + `kotlinx-coroutines-test` |
+| UI | Start a test, the result appears, it's saved in history, and the details screen opens | Compose UI test on the real `MainActivity` with Hilt test modules |
+| Visual | Dial, charts, and readouts in light and dark | Roborazzi screenshot tests ([baselines](app/src/test/screenshots)) |
+
+CI enforces line-coverage targets per layer with Kover: domain ≥ 90%, data ≥ 70%, ViewModels ≥ 80%.
 
 ## Project structure
 
@@ -154,7 +174,7 @@ app/src/main/java/io/github/willyrafaelfs/speedtest/
 - [ ] Benchmark against Ookla Speedtest and Cloudflare on the same network
 - [x] UI refresh: custom design system, live throughput chart, English & Indonesian localization
 - [x] History details with trend charts, shareable result card, and settings
-- [ ] Broader test coverage (ViewModel, engine, Room, Compose UI and screenshot tests)
+- [x] Broader test coverage (ViewModel, engine, Room, Compose UI and screenshot tests)
 - [ ] Signed release builds published to GitHub & GitLab Releases
 
 ## License
