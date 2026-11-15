@@ -50,8 +50,10 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Assemble debug APK
-        run: ./gradlew assembleDebug
+      # Build release (R8) ikut dibangun agar kerusakan akibat minify ketahuan sebelum rilis.
+      # Di PR, secret tidak tersedia sehingga APK release-nya tidak ditandatangani.
+      - name: Assemble debug & release APK
+        run: ./gradlew assembleDebug assembleRelease
 
       - name: Upload reports
         if: always()

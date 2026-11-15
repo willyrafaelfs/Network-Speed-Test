@@ -83,13 +83,14 @@ unit-tests:
 assemble:
   stage: build
   script:
-    - ./gradlew assembleDebug
+    # Release (R8, tanpa tanda tangan di GitLab) ikut dibangun agar kerusakan minify ketahuan.
+    - ./gradlew assembleDebug assembleRelease
   artifacts:
     expire_in: 1 week
     paths:
       - app/build/outputs/apk/debug/
 
-# Membuat GitLab Release untuk setiap tag v* setelah verifikasi & build lolos.
+# Membuat GitLab Release untuk setiap tag vX.Y.Z setelah verifikasi & build lolos.
 # Catatan rilis diambil dari pesan annotated tag (`git tag -a`), sehingga isinya sama
 # dengan GitHub Release. Token yang dipakai adalah CI_JOB_TOKEN bawaan pipeline.
 release:
@@ -113,3 +114,13 @@ release:
     tag_name: $CI_COMMIT_TAG
     name: $CI_COMMIT_TAG
     description: ./release-notes.md
+    # APK bertanda tangan dibangun sekali di GitHub Actions (kunci hanya ada di GitHub
+    # Secrets); GitLab Release menautkannya.
+    assets:
+      links:
+        - name: netra-$CI_COMMIT_TAG.apk
+          url: https://github.com/willyrafaelfs/Network-Speed-Test/releases/download/$CI_COMMIT_TAG/netra-$CI_COMMIT_TAG.apk
+          link_type: package
+        - name: netra-$CI_COMMIT_TAG.apk.sha256
+          url: https://github.com/willyrafaelfs/Network-Speed-Test/releases/download/$CI_COMMIT_TAG/netra-$CI_COMMIT_TAG.apk.sha256
+          link_type: other
