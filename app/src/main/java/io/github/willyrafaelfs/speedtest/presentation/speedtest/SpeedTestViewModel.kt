@@ -108,6 +108,8 @@ class SpeedTestViewModel @Inject constructor(
 
     /** Menggabungkan progress terbaru ke state; nilai lama dipertahankan bila field null. */
     private fun SpeedTestUiState.applyProgress(progress: SpeedTestProgress) = copy(
+        downloadTrace = downloadTrace.appendIf(progress, SpeedTestPhase.DOWNLOAD),
+        uploadTrace = uploadTrace.appendIf(progress, SpeedTestPhase.UPLOAD),
         phase = progress.phase,
         isRunning = progress.phase != SpeedTestPhase.FINISHED,
         currentSpeedMbps = progress.currentSpeedMbps,
@@ -119,4 +121,12 @@ class SpeedTestViewModel @Inject constructor(
         downloadLatencyMs = progress.downloadLatencyMs ?: downloadLatencyMs,
         uploadLatencyMs = progress.uploadLatencyMs ?: uploadLatencyMs,
     )
+
+    private fun List<TracePoint>.appendIf(progress: SpeedTestProgress, phase: SpeedTestPhase): List<TracePoint> =
+        // Sampel progress 1f adalah ringkasan hasil final, bukan kecepatan sesaat; tidak digambar.
+        if (progress.phase == phase && progress.progressFraction < 1f) {
+            this + TracePoint(progress.progressFraction, progress.currentSpeedMbps.toFloat())
+        } else {
+            this
+        }
 }

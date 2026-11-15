@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.room)
@@ -36,6 +37,10 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+    androidResources {
+        // Bahasa per-aplikasi (Android 13+): daftar locale dibuat otomatis dari folder values-*.
+        generateLocaleConfig = true
     }
     lint {
         // Semua temuan lint dianggap error agar CI menolak regresi kualitas.
@@ -75,6 +80,14 @@ dependencies {
     // (lewat room-testing) dikompilasi untuk 1.8.x. AGP mengunci versi di APK test ke versi APK
     // aplikasi, jadi versi aplikasi diselaraskan agar test migrasi tidak gagal (AbstractMethodError).
     implementation(platform(libs.kotlinx.serialization.bom))
+    // Route navigasi type-safe berupa objek @Serializable.
+    implementation(libs.kotlinx.serialization.core)
+
+    // Navigasi, splash screen, dan navigasi adaptif (bottom bar / rail sesuai lebar layar)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
+    implementation(libs.androidx.compose.material3.adaptive)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)

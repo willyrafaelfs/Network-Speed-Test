@@ -3,6 +3,7 @@ package io.github.willyrafaelfs.speedtest.data.remote
 import java.io.Closeable
 import java.util.Collections
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import mockwebserver3.Dispatcher
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -24,6 +25,9 @@ class FakeSpeedServer(
     private val throttlePeriodMillis: Long = 50,
     private val downloadBodyBytes: Int = 512 * 1024,
     private val pingDelayMillis: Long = 0,
+    /** Ping ke-N dan seterusnya (1-based) ditahan selama [slowPingDelayMillis]. */
+    private val slowPingsFrom: Int = Int.MAX_VALUE,
+    private val slowPingDelayMillis: Long = 0,
 ) : Closeable {
 
     /** Status HTTP yang dikembalikan per path; default 200. */
@@ -35,6 +39,7 @@ class FakeSpeedServer(
     val bytesPerSecondPerConnection: Double get() = throttleBytes * MILLIS_PER_SEC / throttlePeriodMillis.toDouble()
 
     private val downloadBody = ByteArray(downloadBodyBytes)
+    private val pingCount = AtomicInteger()
 
     private val server = MockWebServer().apply {
         // Jangan simpan body upload di memori; ukurannya tetap tercatat di bodySize.
@@ -50,9 +55,16 @@ class FakeSpeedServer(
                         .throttleBody(throttleBytes, throttlePeriodMillis, TimeUnit.MILLISECONDS)
                         .build()
 
-                    "/ping" -> MockResponse.Builder()
-                        .headersDelay(pingDelayMillis, TimeUnit.MILLISECONDS)
-                        .build()
+                    "/ping" -> {
+                        val delay = if (pingCount.incrementAndGet() >=
+                            slowPingsFrom
+                        ) {
+                            slowPingDelayMillis
+                        } else {
+                            pingDelayMillis
+                        }
+                        MockResponse.Builder().headersDelay(delay, TimeUnit.MILLISECONDS).build()
+                    }
 
                     else -> MockResponse.Builder().build()
                 }

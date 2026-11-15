@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Window background terang untuk light mode; varian gelap ada di values-night. -->
-    <style name="Theme.NetworkSpeedTest" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Tema window. Latar mengikuti mode terang/gelap agar tidak ada kilatan warna
+         sebelum Compose menggambar frame pertama. -->
+    <style name="Theme.Netra" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/netra_window_background</item>
+    </style>
+
+    <!-- Splash screen (SplashScreen API, kompatibel sampai API 24 lewat core-splashscreen). -->
+    <style name="Theme.Netra.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/netra_ink</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Netra</item>
+    </style>
 </resources>

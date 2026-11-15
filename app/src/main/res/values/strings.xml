@@ -1,3 +1,85 @@
 <resources>
-    <string name="app_name">Network Speed Test</string>
+    <string name="app_name" translatable="false">Netra</string>
+
+    <!-- Navigasi -->
+    <string name="nav_test">Test</string>
+    <string name="nav_history">History</string>
+
+    <!-- Fase test -->
+    <string name="phase_idle">Ready to test</string>
+    <string name="phase_ping">Measuring latency</string>
+    <string name="phase_download">Measuring download</string>
+    <string name="phase_upload">Measuring upload</string>
+    <string name="phase_finished">Test complete</string>
+
+    <!-- Satuan -->
+    <string name="unit_mbps">Mbps</string>
+    <string name="unit_ms">ms</string>
+    <string name="value_missing" translatable="false">—</string>
+
+    <!-- Readout -->
+    <string name="metric_ping">Ping</string>
+    <string name="metric_download">Download</string>
+    <string name="metric_upload">Upload</string>
+    <string name="metric_jitter">Jitter</string>
+    <string name="metric_loaded_download">Ping during download</string>
+    <string name="metric_loaded_upload">Ping during upload</string>
+    <string name="metric_bufferbloat">Bufferbloat</string>
+    <string name="cd_bufferbloat_grade">Bufferbloat grade %1$s</string>
+    <string name="cd_metric_value">%1$s: %2$s %3$s</string>
+
+    <!-- Dial & grafik -->
+    <string name="cd_dial">Current speed, %1$s megabits per second</string>
+    <string name="cd_chart">Throughput chart. Download peak %1$s Mbps, upload peak %2$s Mbps.</string>
+    <string name="chart_axis_max">%1$s Mbps</string>
+
+    <!-- Aksi -->
+    <string name="action_start_test">Start test</string>
+    <string name="action_stop_test">Stop test</string>
+    <string name="action_test_again">Test again</string>
+    <string name="action_cancel">Cancel</string>
+
+    <!-- Error -->
+    <string name="error_no_connection">No internet connection, or the test server can\'t be reached. Check your connection and try again.</string>
+    <string name="error_timeout">The test server stopped responding. Try again in a moment.</string>
+    <string name="error_server">The test server refused the request (HTTP %1$d). Try again later.</string>
+    <string name="error_unknown">The test stopped because of an unexpected error. Try again.</string>
+
+    <!-- Info jaringan -->
+    <string name="network_connection">Connection</string>
+    <string name="network_wifi_name">Wi-Fi name</string>
+    <string name="network_carrier">Carrier</string>
+    <string name="network_public_ip">Public IP</string>
+    <string name="network_type_wifi">Wi-Fi</string>
+    <string name="network_type_cellular">Mobile data</string>
+    <string name="network_type_ethernet">Ethernet</string>
+    <string name="network_type_vpn">VPN</string>
+    <string name="network_type_other">Other</string>
+    <string name="network_type_connected">Connected</string>
+    <string name="network_type_disconnected">Not connected</string>
+    <string name="network_unknown">Unknown network</string>
+
+    <!-- Izin lokasi -->
+    <string name="permission_ssid_hint">Allow location access to show the Wi-Fi name.</string>
+    <string name="permission_allow">Allow location access</string>
+    <string name="permission_rationale_title">Show your Wi-Fi name</string>
+    <string name="permission_rationale_body">Android shares the Wi-Fi name only with apps that have precise location access. Netra uses it to label your results and never records where you are.</string>
+    <string name="permission_continue">Continue</string>
+    <string name="permission_not_now">Not now</string>
+    <string name="permission_denied_hint">Location access is off, so the Wi-Fi name stays hidden. You can turn it on in Settings.</string>
+    <string name="permission_open_settings">Open settings</string>
+
+    <!-- Riwayat -->
+    <string name="history_title">History</string>
+    <plurals name="history_count">
+        <item quantity="one">%1$d result</item>
+        <item quantity="other">%1$d results</item>
+    </plurals>
+    <string name="history_empty_title">No results yet</string>
+    <string name="history_empty_body">Run a test and the result appears here.</string>
+    <string name="history_clear">Clear history</string>
+    <string name="history_clear_title">Clear all results?</string>
+    <string name="history_clear_body">Every saved result will be deleted. This can\'t be undone.</string>
+    <string name="history_delete">Delete</string>
+    <string name="cd_history_delete">Delete result from %1$s</string>
 </resources>

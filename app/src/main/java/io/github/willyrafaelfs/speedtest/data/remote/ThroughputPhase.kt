@@ -93,6 +93,7 @@ internal fun measureThroughput(
     pingTester: PingTester,
     workload: ThroughputWorkload,
 ): Flow<SpeedSample> = channelFlow {
+    pingTester.warmUp()
     val start = System.nanoTime()
     val run = PhaseRun(startNanos = start, deadlineNanos = start + config.testDurationMillis.millisToNanos())
     val meter = LiveMeter(start, config)

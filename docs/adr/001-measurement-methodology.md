@@ -68,9 +68,17 @@ of bytes written, and accepts that the result is less accurate.
 
 ### Latency under load and bufferbloat grade
 
-While download and upload run, a separate connection sends the 0-byte ping request every 500 ms. The first
-sample is discarded, because it includes the TCP and TLS handshake. The **median** of the remaining
-samples is reported per phase.
+While download and upload run, a separate connection sends the 0-byte ping request every 500 ms. The
+**median** of those samples is reported per phase.
+
+- The ping client has **its own connection pool**, and its connection is warmed up right before the load
+  starts. A loaded ping then measures one round trip and not a TCP + TLS handshake. Without this, a
+  throughput worker can grab the warm connection from the shared pool. On a link with heavy downlink
+  bufferbloat, the probe's new handshake (about 4 round trips under load) took longer than the whole phase,
+  so no sample completed and the grade silently ignored the worst phase. Real-device testing found this in
+  Phase 2.
+- If no ping has completed when the phase ends, the time the in-flight ping has waited so far is recorded as
+  a **lower bound**. An empty value would hide exactly the case the grade exists to show.
 
 The grade is based on the worst increase over idle latency, using the thresholds of the
 [Waveform bufferbloat test](https://www.waveform.com/tools/bufferbloat):

@@ -1,0 +1,71 @@
+<resources>
+    <string name="nav_test">Tes</string>
+    <string name="nav_history">Riwayat</string>
+
+    <string name="phase_idle">Siap menguji</string>
+    <string name="phase_ping">Mengukur latensi</string>
+    <string name="phase_download">Mengukur download</string>
+    <string name="phase_upload">Mengukur upload</string>
+    <string name="phase_finished">Tes selesai</string>
+
+    <string name="unit_mbps">Mbps</string>
+    <string name="unit_ms">ms</string>
+
+    <string name="metric_ping">Ping</string>
+    <string name="metric_download">Download</string>
+    <string name="metric_upload">Upload</string>
+    <string name="metric_jitter">Jitter</string>
+    <string name="metric_loaded_download">Ping saat download</string>
+    <string name="metric_loaded_upload">Ping saat upload</string>
+    <string name="metric_bufferbloat">Bufferbloat</string>
+    <string name="cd_bufferbloat_grade">Nilai bufferbloat %1$s</string>
+    <string name="cd_metric_value">%1$s: %2$s %3$s</string>
+
+    <string name="cd_dial">Kecepatan saat ini, %1$s megabit per detik</string>
+    <string name="cd_chart">Grafik throughput. Puncak download %1$s Mbps, puncak upload %2$s Mbps.</string>
+    <string name="chart_axis_max">%1$s Mbps</string>
+
+    <string name="action_start_test">Mulai tes</string>
+    <string name="action_stop_test">Hentikan tes</string>
+    <string name="action_test_again">Tes lagi</string>
+    <string name="action_cancel">Batal</string>
+
+    <string name="error_no_connection">Tidak ada koneksi internet, atau server tes tidak bisa dijangkau. Periksa koneksi lalu coba lagi.</string>
+    <string name="error_timeout">Server tes berhenti merespons. Coba lagi sebentar lagi.</string>
+    <string name="error_server">Server tes menolak permintaan (HTTP %1$d). Coba lagi nanti.</string>
+    <string name="error_unknown">Tes berhenti karena kesalahan yang tidak terduga. Coba lagi.</string>
+
+    <string name="network_connection">Koneksi</string>
+    <string name="network_wifi_name">Nama Wi-Fi</string>
+    <string name="network_carrier">Operator</string>
+    <string name="network_public_ip">IP publik</string>
+    <string name="network_type_wifi">Wi-Fi</string>
+    <string name="network_type_cellular">Data seluler</string>
+    <string name="network_type_ethernet">Ethernet</string>
+    <string name="network_type_vpn">VPN</string>
+    <string name="network_type_other">Lainnya</string>
+    <string name="network_type_connected">Terhubung</string>
+    <string name="network_type_disconnected">Tidak terhubung</string>
+    <string name="network_unknown">Jaringan tidak dikenal</string>
+
+    <string name="permission_ssid_hint">Izinkan akses lokasi untuk menampilkan nama Wi-Fi.</string>
+    <string name="permission_allow">Izinkan akses lokasi</string>
+    <string name="permission_rationale_title">Tampilkan nama Wi-Fi</string>
+    <string name="permission_rationale_body">Android hanya membagikan nama Wi-Fi ke aplikasi yang punya akses lokasi presisi. Netra memakainya untuk memberi label pada hasil tes, dan tidak pernah mencatat lokasi Anda.</string>
+    <string name="permission_continue">Lanjutkan</string>
+    <string name="permission_not_now">Nanti saja</string>
+    <string name="permission_denied_hint">Akses lokasi nonaktif, jadi nama Wi-Fi tidak ditampilkan. Anda bisa mengaktifkannya di Setelan.</string>
+    <string name="permission_open_settings">Buka setelan</string>
+
+    <string name="history_title">Riwayat</string>
+    <plurals name="history_count">
+        <item quantity="other">%1$d hasil</item>
+    </plurals>
+    <string name="history_empty_title">Belum ada hasil</string>
+    <string name="history_empty_body">Jalankan tes, dan hasilnya akan muncul di sini.</string>
+    <string name="history_clear">Hapus riwayat</string>
+    <string name="history_clear_title">Hapus semua hasil?</string>
+    <string name="history_clear_body">Semua hasil yang tersimpan akan dihapus dan tidak bisa dikembalikan.</string>
+    <string name="history_delete">Hapus</string>
+    <string name="cd_history_delete">Hapus hasil dari %1$s</string>
+</resources>

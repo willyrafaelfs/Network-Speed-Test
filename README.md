@@ -1,4 +1,6 @@
-# Network Speed Test
+<img src="docs/images/icon-512.png" alt="Netra app icon" width="96" align="right">
+
+# Netra
 
 [![CI](https://github.com/willyrafaelfs/Network-Speed-Test/actions/workflows/ci.yml/badge.svg)](https://github.com/willyrafaelfs/Network-Speed-Test/actions/workflows/ci.yml)
 [![GitLab pipeline](https://gitlab.com/willyrafaelfs/Network-Speed-Test/badges/main/pipeline.svg)](https://gitlab.com/willyrafaelfs/Network-Speed-Test/-/pipelines)
@@ -6,10 +8,13 @@
 ![Min SDK](https://img.shields.io/badge/minSdk-24-3DDC84?logo=android&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-An Android app that measures your connection's **ping, jitter, download, and upload speed** in real time,
-built with Jetpack Compose and Clean Architecture.
+Netra is an Android network speed test that measures **ping, jitter, download, upload, and latency under load**
+in real time. It's built with Jetpack Compose and Clean Architecture. The name means "eye" in Sanskrit and
+Javanese: an instrument for seeing how your connection behaves.
 
-> Screenshots and a demo GIF are coming with the UI refresh.
+| Live test (dark) | Result (light) | History |
+|---|---|---|
+| <img src="docs/images/demo.gif" alt="A full test running: the dial follows the live speed while the chart draws download and upload traces" width="240"> | <img src="docs/images/screen-test-light.png" alt="Finished test in light mode with download and upload traces" width="240"> | <img src="docs/images/screen-history-dark.png" alt="History list with download, upload, ping and bufferbloat grade per result" width="240"> |
 
 ## Features
 
@@ -22,6 +27,12 @@ built with Jetpack Compose and Clean Architecture.
 - **Latency & jitter**: averaged HTTP round-trips after a warm-up request, so the TLS handshake isn't counted
 - **Real-time sampling**: throughput is emitted every 250 ms as a Kotlin `Flow`
 - **Clear errors**: no connection, timeout, and server rejection are told apart and explained in plain language
+- **Instrument-style UI**: custom design system (navy base, one color per channel: cyan download, lime upload,
+  amber latency), IBM Plex with tabular numerals, a ticked dial, and an oscilloscope-style live chart
+- **Light & dark themes**, English and Indonesian (with per-app language on Android 13+)
+- **Adaptive layout**: bottom bar on phones, navigation rail and two panes in landscape and on tablets
+- **Accessible**: every reading is announced as one sentence, touch targets are at least 48 dp, and layouts
+  scroll at large font sizes
 - **Network info**: connection type (Wi-Fi / cellular / Ethernet / VPN), SSID or carrier name, and public IP,
   updated live as the network changes
 - **History**: every result is stored locally with Room, and can be deleted one by one or all at once
@@ -31,7 +42,8 @@ built with Jetpack Compose and Clean Architecture.
 
 | Area | Libraries |
 |---|---|
-| UI | Jetpack Compose, Material 3, Canvas-drawn gauge |
+| UI | Jetpack Compose, Material 3 (custom theme), Canvas-drawn dial & chart, SplashScreen API |
+| Navigation | Navigation Compose with type-safe routes, Material 3 adaptive navigation suite |
 | Architecture | Clean Architecture (domain / data / presentation), MVVM, unidirectional data flow |
 | Async | Kotlin Coroutines & Flow (`callbackFlow`, `flatMapLatest`, `stateIn`) |
 | Networking | OkHttp 5 |
@@ -120,10 +132,12 @@ app/src/main/java/io/github/willyrafaelfs/speedtest/
 │   ├── repository/  # repository implementations
 │   └── di/          # Hilt modules
 ├── presentation/
-│   ├── speedtest/   # test screen, ViewModel, UI state
+│   ├── navigation/  # app scaffold, type-safe routes, adaptive navigation
+│   ├── speedtest/   # test screen, ViewModel, UI state, location permission flow
 │   ├── history/     # history screen, ViewModel, UI state
-│   └── component/   # reusable composables (gauge, cards)
-└── ui/theme/        # Material 3 theme
+│   ├── component/   # instrument dial, live chart, readouts, panels
+│   └── format/      # locale-aware number formatting, labels
+└── ui/theme/        # Netra design system: colors, type, shapes, spacing
 ```
 
 ## Roadmap
@@ -131,11 +145,12 @@ app/src/main/java/io/github/willyrafaelfs/speedtest/
 - [x] Project foundation: CI on GitHub & GitLab, formatting, static analysis
 - [x] More accurate engine: parallel streams, ramp-up exclusion, loaded latency (bufferbloat grade)
 - [ ] Benchmark against Ookla Speedtest and Cloudflare on the same network
-- [ ] UI refresh: custom design system, live throughput chart, English & Indonesian localization
+- [x] UI refresh: custom design system, live throughput chart, English & Indonesian localization
 - [ ] History details with trend charts, shareable result card, and settings
 - [ ] Broader test coverage (ViewModel, engine, Room, Compose UI and screenshot tests)
 - [ ] Signed release builds published to GitHub & GitLab Releases
 
 ## License
 
-Released under the [MIT License](LICENSE).
+Released under the [MIT License](LICENSE). The bundled IBM Plex Sans and IBM Plex Mono fonts are licensed under
+the [SIL Open Font License 1.1](app/src/main/assets/licenses/ibm-plex-OFL.txt).

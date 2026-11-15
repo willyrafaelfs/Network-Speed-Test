@@ -2,6 +2,7 @@
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.hilt) apply false
     alias(libs.plugins.room) apply false
@@ -30,6 +31,8 @@ spotless {
             "ktlint_standard_function-signature" to "disabled",
             "ktlint_standard_multiline-expression-wrapping" to "disabled",
             "ktlint_standard_chain-method-continuation" to "disabled",
+            // CompositionLocal yang memang disengaja: token design system Netra.
+            "compose_allowed_composition_locals" to "LocalNetraColors,LocalNetraNumerals",
         )
     kotlin {
         // Target eksplisit (bukan **/*.kt) agar cache Gradle/SDK di dalam folder proyek,
