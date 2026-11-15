@@ -35,6 +35,7 @@ cache:
 stages:
   - verify
   - build
+  - release
 
 before_script:
   - apt-get update -qq && apt-get install -y -qq --no-install-recommends curl unzip > /dev/null
@@ -81,3 +82,26 @@ assemble:
     expire_in: 1 week
     paths:
       - app/build/outputs/apk/debug/
+
+# Membuat GitLab Release untuk setiap tag v* setelah verifikasi & build lolos.
+# Catatan rilis diambil dari pesan annotated tag (`git tag -a`), sehingga isinya sama
+# dengan GitHub Release. Token yang dipakai adalah CI_JOB_TOKEN bawaan pipeline.
+release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/cli:latest
+  # Tidak butuh Android SDK maupun cache Gradle.
+  before_script: []
+  cache: []
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
+  script:
+    - |
+      if [ -z "$CI_COMMIT_TAG_MESSAGE" ]; then
+        echo "Tag $CI_COMMIT_TAG tidak punya pesan. Gunakan annotated tag: git tag -a $CI_COMMIT_TAG" >&2
+        exit 1
+      fi
+    - echo "Membuat release $CI_COMMIT_TAG"
+  release:
+    tag_name: $CI_COMMIT_TAG
+    name: $CI_COMMIT_TAG
+    description: $CI_COMMIT_TAG_MESSAGE
