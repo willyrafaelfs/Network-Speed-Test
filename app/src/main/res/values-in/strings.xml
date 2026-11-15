@@ -22,8 +22,8 @@
     <string name="cd_metric_value">%1$s: %2$s %3$s</string>
 
     <string name="cd_dial">Kecepatan saat ini, %1$s megabit per detik</string>
-    <string name="cd_chart">Grafik throughput. Puncak download %1$s Mbps, puncak upload %2$s Mbps.</string>
-    <string name="chart_axis_max">%1$s Mbps</string>
+    <string name="cd_chart">Grafik throughput. Puncak download %1$s, puncak upload %2$s %3$s.</string>
+    <string name="chart_axis_max">%1$s %2$s</string>
 
     <string name="action_start_test">Mulai tes</string>
     <string name="action_stop_test">Hentikan tes</string>
@@ -67,5 +67,46 @@
     <string name="history_clear_title">Hapus semua hasil?</string>
     <string name="history_clear_body">Semua hasil yang tersimpan akan dihapus dan tidak bisa dikembalikan.</string>
     <string name="history_delete">Hapus</string>
-    <string name="cd_history_delete">Hapus hasil dari %1$s</string>
+
+    <!-- Fase 3: Settings, detail, tren, share -->
+    <string name="nav_settings">Setelan</string>
+    <string name="cd_dial_mbytes">Kecepatan saat ini, %1$s megabyte per detik</string>
+    <string name="action_back">Kembali</string>
+    <string name="settings_title">Setelan</string>
+    <string name="settings_section_measurement">Pengukuran</string>
+    <string name="settings_duration">Durasi tes</string>
+    <string name="settings_duration_hint">Tes yang lebih lama meredam penurunan sesaat, tapi memakai lebih banyak kuota.</string>
+    <string name="settings_duration_value">%1$d dtk</string>
+    <string name="settings_streams">Koneksi paralel</string>
+    <string name="settings_streams_hint">Makin banyak koneksi, makin penuh link cepat terisi. Pilih 1 untuk melihat hasil satu unduhan saja.</string>
+    <string name="settings_section_display">Tampilan</string>
+    <string name="settings_unit">Satuan kecepatan</string>
+    <string name="settings_theme">Tema</string>
+    <string name="theme_system">Sistem</string>
+    <string name="theme_light">Terang</string>
+    <string name="theme_dark">Gelap</string>
+    <string name="settings_dynamic_color">Warna wallpaper</string>
+    <string name="settings_dynamic_color_hint">Pakai warna dari wallpaper. Download, upload, dan latensi tetap memakai warnanya sendiri.</string>
+    <string name="settings_section_about">Tentang</string>
+    <string name="settings_methodology">Secara default hasil memakai 4 koneksi paralel, melewati 2 detik pertama, dan melaporkan persentil ke-90.</string>
+    <string name="filter_all">Semua</string>
+    <string name="trend_title">Rata-rata harian</string>
+    <string name="trend_metric_speed">Kecepatan</string>
+    <string name="trend_metric_ping">Ping</string>
+    <string name="trend_empty">Tren muncul setelah ada hasil dari dua hari yang berbeda.</string>
+    <plurals name="cd_trend">
+        <item quantity="other">Grafik rata-rata harian, %1$d hari</item>
+    </plurals>
+    <string name="history_filtered_empty">Belum ada hasil untuk jenis jaringan ini.</string>
+    <string name="detail_title">Hasil</string>
+    <string name="detail_share">Bagikan</string>
+    <string name="detail_not_found">Hasil ini sudah dihapus.</string>
+    <string name="detail_latency_rise">Latensi naik %1$s ms saat beban.</string>
+    <string name="detail_latency_stable">Latensi saat beban tetap dalam %1$s ms dari kondisi idle.</string>
+    <string name="detail_no_loaded_latency">Latensi saat beban tidak diukur untuk hasil ini.</string>
+    <string name="detail_no_trace">Grafik kecepatan tersedia untuk hasil yang diukur sejak versi 1.4.0.</string>
+    <string name="share_chooser">Bagikan hasil</string>
+    <string name="share_failed">Gambar gagal dibuat. Coba lagi.</string>
+    <string name="share_footer">Diukur dengan Netra</string>
+    <string name="cd_open_result">Buka hasil dari %1$s</string>
 </resources>

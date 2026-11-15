@@ -4,6 +4,9 @@ import io.github.willyrafaelfs.speedtest.domain.model.BufferbloatGrade
 import io.github.willyrafaelfs.speedtest.domain.model.NetworkInfo
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestError
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestPhase
+import io.github.willyrafaelfs.speedtest.domain.model.SpeedUnit
+import io.github.willyrafaelfs.speedtest.domain.model.TracePoint
+import io.github.willyrafaelfs.speedtest.presentation.component.ResultMetrics
 
 /**
  * State yang dirender oleh layar test. Field metrik nullable karena terisi
@@ -18,6 +21,7 @@ import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestPhase
  * @param downloadTrace / uploadTrace titik kecepatan sesaat per fase, untuk grafik real-time.
  * @param networkInfo info koneksi terkini (jenis, SSID/operator, IP publik).
  * @param error penyebab test gagal; null bila tidak ada.
+ * @param speedUnit satuan tampilan kecepatan dari Settings.
  */
 data class SpeedTestUiState(
     val phase: SpeedTestPhase = SpeedTestPhase.IDLE,
@@ -34,19 +38,16 @@ data class SpeedTestUiState(
     val uploadTrace: List<TracePoint> = emptyList(),
     val networkInfo: NetworkInfo = NetworkInfo.Unknown,
     val error: SpeedTestError? = null,
+    val speedUnit: SpeedUnit = SpeedUnit.MBPS,
 ) {
+    /** Metrik hasil yang sudah terukur sejauh ini, untuk panel readout. */
+    val metrics: ResultMetrics
+        get() = ResultMetrics(downloadMbps, uploadMbps, pingMs, jitterMs, downloadLatencyMs, uploadLatencyMs)
+
     /** True bila satu sesi test sudah selesai penuh. */
     val isFinished: Boolean get() = phase == SpeedTestPhase.FINISHED
 
     /** Grade bufferbloat; tersedia sejak latency saat beban pertama terukur. */
     val bufferbloatGrade: BufferbloatGrade?
-        get() = pingMs?.let { BufferbloatGrade.of(it, downloadLatencyMs, uploadLatencyMs) }
+        get() = metrics.bufferbloatGrade
 }
-
-/**
- * Satu titik grafik throughput.
- *
- * @param progress posisi di dalam fase (0f..1f), menjadi sumbu X.
- * @param mbps kecepatan sesaat pada titik tersebut.
- */
-data class TracePoint(val progress: Float, val mbps: Float)

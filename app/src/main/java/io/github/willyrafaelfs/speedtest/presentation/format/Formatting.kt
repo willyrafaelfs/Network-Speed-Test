@@ -1,5 +1,6 @@
 package io.github.willyrafaelfs.speedtest.presentation.format
 
+import android.text.format.DateFormat
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
@@ -11,7 +12,10 @@ import io.github.willyrafaelfs.speedtest.domain.model.NetworkInfo
 import io.github.willyrafaelfs.speedtest.domain.model.NetworkType
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestError
 import io.github.willyrafaelfs.speedtest.domain.model.SpeedTestPhase
+import io.github.willyrafaelfs.speedtest.domain.model.SpeedUnit
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 /** Locale UI saat ini; dibaca dari Configuration agar ikut berubah saat bahasa diganti. */
@@ -26,52 +30,36 @@ fun formatDecimal(value: Double, fractionDigits: Int, locale: Locale): String =
         maximumFractionDigits = fractionDigits
     }.format(value)
 
-/** Kecepatan dengan 1 angka desimal, atau tanda kosong bila belum terukur. */
+/** Nilai kecepatan dalam satuan tampilan (data selalu disimpan dalam Mbps). */
+fun SpeedUnit.fromMbps(mbps: Double): Double = when (this) {
+    SpeedUnit.MBPS -> mbps
+    SpeedUnit.MEGABYTES_PER_SECOND -> mbps / BITS_PER_BYTE
+}
+
+/** Kecepatan dalam [unit] dengan 1 angka desimal, atau tanda kosong bila belum terukur. */
 @Composable
 @ReadOnlyComposable
-fun formatMbps(value: Double?): String =
-    value?.let { formatDecimal(it, 1, currentLocale()) } ?: stringResource(R.string.value_missing)
+fun formatSpeed(mbps: Double?, unit: SpeedUnit): String =
+    mbps?.let { formatDecimal(unit.fromMbps(it), 1, currentLocale()) } ?: stringResource(R.string.value_missing)
+
+private const val BITS_PER_BYTE = 8.0
+
+/** Tanggal & jam sesuai locale UI; formatter dibuat per panggilan karena DateFormat tidak thread-safe. */
+@Composable
+@ReadOnlyComposable
+fun formatTimestamp(timestamp: Long): String =
+    java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT, currentLocale())
+        .format(Date(timestamp))
+
+/** Tanggal ISO "yyyy-MM-dd" sebagai label pendek sesuai locale (mis. "Nov 15" / "15 Nov"). */
+fun formatShortDay(isoDay: String, locale: Locale): String {
+    val date = runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(isoDay) }.getOrNull() ?: return isoDay
+    val pattern = DateFormat.getBestDateTimePattern(locale, "MMMd")
+    return SimpleDateFormat(pattern, locale).format(date)
+}
 
 /** Latency dalam ms tanpa desimal, atau tanda kosong bila belum terukur. */
 @Composable
 @ReadOnlyComposable
 fun formatMs(value: Double?): String =
     value?.let { formatDecimal(it, 0, currentLocale()) } ?: stringResource(R.string.value_missing)
-
-@StringRes
-fun SpeedTestPhase.labelRes(): Int = when (this) {
-    SpeedTestPhase.IDLE -> R.string.phase_idle
-    SpeedTestPhase.PING -> R.string.phase_ping
-    SpeedTestPhase.DOWNLOAD -> R.string.phase_download
-    SpeedTestPhase.UPLOAD -> R.string.phase_upload
-    SpeedTestPhase.FINISHED -> R.string.phase_finished
-}
-
-@StringRes
-fun NetworkType.labelRes(isConnected: Boolean = true): Int = when (this) {
-    NetworkType.WIFI -> R.string.network_type_wifi
-    NetworkType.CELLULAR -> R.string.network_type_cellular
-    NetworkType.ETHERNET -> R.string.network_type_ethernet
-    NetworkType.VPN -> R.string.network_type_vpn
-    NetworkType.OTHER -> R.string.network_type_other
-    NetworkType.NONE -> if (isConnected) R.string.network_type_connected else R.string.network_type_disconnected
-}
-
-@StringRes
-fun NetworkInfo.typeLabelRes(): Int = type.labelRes(isConnected)
-
-/** Pesan error yang ramah; bisa diformat dengan kode HTTP untuk [SpeedTestError.ServerError]. */
-@Composable
-fun SpeedTestError.message(): String = when (this) {
-    SpeedTestError.NoConnection -> stringResource(R.string.error_no_connection)
-    SpeedTestError.Timeout -> stringResource(R.string.error_timeout)
-    is SpeedTestError.ServerError -> stringResource(R.string.error_server, httpCode)
-    SpeedTestError.Unknown -> stringResource(R.string.error_unknown)
-}
-
-/** Teks grade seperti yang lazim ditampilkan alat bufferbloat (mis. "A+"). */
-val BufferbloatGrade.label: String
-    get() = when (this) {
-        BufferbloatGrade.A_PLUS -> "A+"
-        else -> name
-    }

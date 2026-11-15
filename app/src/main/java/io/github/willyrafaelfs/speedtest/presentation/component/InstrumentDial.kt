@@ -39,8 +39,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.willyrafaelfs.speedtest.R
+import io.github.willyrafaelfs.speedtest.domain.model.SpeedUnit
 import io.github.willyrafaelfs.speedtest.presentation.format.currentLocale
 import io.github.willyrafaelfs.speedtest.presentation.format.formatDecimal
+import io.github.willyrafaelfs.speedtest.presentation.format.fromMbps
+import io.github.willyrafaelfs.speedtest.presentation.format.labelRes
 import io.github.willyrafaelfs.speedtest.ui.theme.NetraTheme
 import kotlin.math.cos
 import kotlin.math.sin
@@ -55,12 +58,14 @@ import kotlin.math.sin
  * @param speedMbps nilai yang ditunjukkan; perubahan dianimasikan.
  * @param channelColor warna kanal fase aktif (download/upload/latency).
  * @param caption teks kecil di bawah satuan (mis. fase yang sedang berjalan).
+ * @param unit satuan tampilan; skala MB/s punya breakpoint sendiri agar labelnya tetap bulat.
  */
 @Composable
 fun InstrumentDial(
     speedMbps: Float,
     channelColor: Color,
     caption: String,
+    unit: SpeedUnit,
     modifier: Modifier = Modifier,
     maxSize: Dp = 300.dp,
 ) {
@@ -72,7 +77,12 @@ fun InstrumentDial(
     val animatedColor by animateColorAsState(channelColor, tween(DIAL_COLOR_MILLIS), label = "dialColor")
 
     val locale = currentLocale()
-    val description = stringResource(R.string.cd_dial, formatDecimal(speedMbps.toDouble(), 1, locale))
+    val scale = DialScale.of(unit)
+    val displayed = unit.fromMbps(animatedSpeed.toDouble())
+    val description = stringResource(
+        if (unit == SpeedUnit.MBPS) R.string.cd_dial else R.string.cd_dial_mbytes,
+        formatDecimal(unit.fromMbps(speedMbps.toDouble()), 1, locale),
+    )
     val colors = DialColors(
         value = animatedColor,
         track = NetraTheme.colors.grid,
@@ -91,19 +101,19 @@ fun InstrumentDial(
             .semantics { contentDescription = description },
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            drawDial(speedToFraction(animatedSpeed), colors, textMeasurer, scaleStyle)
+            drawDial(scale.fractionOf(displayed.toFloat()), scale, colors, textMeasurer, scaleStyle)
         }
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.centerOnDial(),
         ) {
             Text(
-                text = formatDecimal(animatedSpeed.toDouble(), 1, locale),
+                text = formatDecimal(displayed, 1, locale),
                 style = NetraTheme.numerals.dial,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = stringResource(R.string.unit_mbps),
+                text = stringResource(unit.labelRes()),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -137,7 +147,13 @@ private fun Modifier.centerOnDial() = layout { measurable, constraints ->
 
 private data class DialColors(val value: Color, val track: Color, val minorTick: Color, val majorTick: Color)
 
-private fun DrawScope.drawDial(fraction: Float, colors: DialColors, textMeasurer: TextMeasurer, scaleStyle: TextStyle) {
+private fun DrawScope.drawDial(
+    fraction: Float,
+    scale: DialScale,
+    colors: DialColors,
+    textMeasurer: TextMeasurer,
+    scaleStyle: TextStyle,
+) {
     val center = Offset(size.width / 2f, size.width / 2f)
     val outer = size.width / 2f - 2.dp.toPx()
     val arcRadius = outer - 24.dp.toPx()
@@ -146,7 +162,7 @@ private fun DrawScope.drawDial(fraction: Float, colors: DialColors, textMeasurer
     val arcStroke = 6.dp.toPx()
 
     // Tanda skala: minor di antara breakpoint, mayor (lebih panjang) di breakpoint.
-    val segments = SCALE_BREAKPOINTS.size - 1
+    val segments = scale.breakpoints.size - 1
     val totalTicks = segments * MINOR_PER_SEGMENT
     for (tick in 0..totalTicks) {
         val isMajor = tick % MINOR_PER_SEGMENT == 0
@@ -163,9 +179,9 @@ private fun DrawScope.drawDial(fraction: Float, colors: DialColors, textMeasurer
 
     // Label skala di dalam arc nilai.
     val labelRadius = arcRadius - 22.dp.toPx()
-    SCALE_BREAKPOINTS.forEachIndexed { index, value ->
+    scale.breakpoints.forEachIndexed { index, value ->
         val angle = Math.toRadians((START_ANGLE + SWEEP_ANGLE * index / segments).toDouble())
-        val layout = textMeasurer.measure(scaleLabel(value), scaleStyle)
+        val layout = textMeasurer.measure(scale.label(value), scaleStyle)
         val position = center + polar(labelRadius, angle)
         drawText(layout, topLeft = Offset(position.x - layout.size.width / 2f, position.y - layout.size.height / 2f))
     }
@@ -200,24 +216,38 @@ private fun DrawScope.drawDial(fraction: Float, colors: DialColors, textMeasurer
 private fun polar(radius: Float, angleRad: Double) =
     Offset((radius * cos(angleRad)).toFloat(), (radius * sin(angleRad)).toFloat())
 
-/** Fraksi 0f..1f di sepanjang arc untuk skala non-linear [SCALE_BREAKPOINTS]. */
-internal fun speedToFraction(speed: Float): Float {
-    val bp = SCALE_BREAKPOINTS
-    val segments = bp.size - 1
-    val clamped = speed.coerceIn(bp.first(), bp.last())
-    val segment = (0 until segments).firstOrNull { clamped < bp[it + 1] } ?: return 1f
-    val within = (clamped - bp[segment]) / (bp[segment + 1] - bp[segment])
-    return (segment + within) / segments
+/**
+ * Skala non-linear dial: tiap breakpoint menempati sudut yang sama, sehingga kecepatan
+ * rendah tetap terbaca detail dan jaringan gigabit tetap muat.
+ */
+internal enum class DialScale(val breakpoints: List<Float>) {
+    MBPS(listOf(0f, 25f, 50f, 100f, 250f, 500f, 1000f)),
+
+    // ~ Mbps / 8, dibulatkan agar label tetap mudah dibaca; 125 MB/s = 1 Gbps.
+    MEGABYTES(listOf(0f, 3f, 6f, 12f, 30f, 60f, 125f)),
+    ;
+
+    /** Fraksi 0f..1f di sepanjang arc untuk nilai dalam satuan skala ini. */
+    fun fractionOf(value: Float): Float {
+        val segments = breakpoints.size - 1
+        val clamped = value.coerceIn(breakpoints.first(), breakpoints.last())
+        val segment = (0 until segments).firstOrNull { clamped < breakpoints[it + 1] } ?: return 1f
+        val within = (clamped - breakpoints[segment]) / (breakpoints[segment + 1] - breakpoints[segment])
+        return (segment + within) / segments
+    }
+
+    fun label(value: Float): String = if (value >= THOUSAND) "1k" else value.toInt().toString()
+
+    companion object {
+        fun of(unit: SpeedUnit) = if (unit == SpeedUnit.MBPS) MBPS else MEGABYTES
+    }
 }
 
-private fun scaleLabel(value: Float): String = if (value >= GIGABIT_MBPS) "1k" else value.toInt().toString()
-
-private val SCALE_BREAKPOINTS = listOf(0f, 25f, 50f, 100f, 250f, 500f, 1000f)
+private const val THOUSAND = 1000f
 private const val MINOR_PER_SEGMENT = 5
 
 // lebar : tinggi; tinggi = r + r*sin(45°) + ruang tanda skala.
 private const val DIAL_ASPECT_RATIO = 1.15f
-private const val GIGABIT_MBPS = 1000f
 private const val START_ANGLE = 135f
 private const val SWEEP_ANGLE = 270f
 private const val GLOW_ALPHA = 0.16f
@@ -229,6 +259,11 @@ private const val CAPTION_FADE_MILLIS = 220
 @Composable
 private fun InstrumentDialPreview() {
     NetraTheme {
-        InstrumentDial(speedMbps = 187.4f, channelColor = NetraTheme.colors.download, caption = "Measuring download")
+        InstrumentDial(
+            speedMbps = 187.4f,
+            channelColor = NetraTheme.colors.download,
+            caption = "Measuring download",
+            unit = SpeedUnit.MBPS,
+        )
     }
 }

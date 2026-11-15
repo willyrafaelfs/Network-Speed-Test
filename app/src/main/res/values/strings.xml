@@ -30,8 +30,8 @@
 
     <!-- Dial & grafik -->
     <string name="cd_dial">Current speed, %1$s megabits per second</string>
-    <string name="cd_chart">Throughput chart. Download peak %1$s Mbps, upload peak %2$s Mbps.</string>
-    <string name="chart_axis_max">%1$s Mbps</string>
+    <string name="cd_chart">Throughput chart. Download peak %1$s, upload peak %2$s %3$s.</string>
+    <string name="chart_axis_max">%1$s %2$s</string>
 
     <!-- Aksi -->
     <string name="action_start_test">Start test</string>
@@ -81,5 +81,49 @@
     <string name="history_clear_title">Clear all results?</string>
     <string name="history_clear_body">Every saved result will be deleted. This can\'t be undone.</string>
     <string name="history_delete">Delete</string>
-    <string name="cd_history_delete">Delete result from %1$s</string>
+
+    <!-- Fase 3: Settings, detail, tren, share -->
+    <string name="nav_settings">Settings</string>
+    <string name="unit_mbytes" translatable="false">MB/s</string>
+    <string name="cd_dial_mbytes">Current speed, %1$s megabytes per second</string>
+    <string name="action_back">Back</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_measurement">Measurement</string>
+    <string name="settings_duration">Test duration</string>
+    <string name="settings_duration_hint">Longer tests smooth out short dips, but use more data.</string>
+    <string name="settings_duration_value">%1$d s</string>
+    <string name="settings_streams">Parallel connections</string>
+    <string name="settings_streams_hint">More connections fill fast links better. Choose 1 to see what a single download gets.</string>
+    <string name="settings_section_display">Display</string>
+    <string name="settings_unit">Speed unit</string>
+    <string name="settings_theme">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="settings_dynamic_color">Wallpaper colors</string>
+    <string name="settings_dynamic_color_hint">Use colors from your wallpaper. Download, upload, and latency keep their own colors.</string>
+    <string name="settings_section_about">About</string>
+    <string name="settings_version" translatable="false">Netra %1$s</string>
+    <string name="settings_methodology">Results use 4 parallel connections by default, skip the first 2 seconds, and report the 90th percentile.</string>
+    <string name="filter_all">All</string>
+    <string name="trend_title">Daily average</string>
+    <string name="trend_metric_speed">Speed</string>
+    <string name="trend_metric_ping">Ping</string>
+    <string name="trend_empty">Trends appear once you have results from two different days.</string>
+    <plurals name="cd_trend">
+        <item quantity="one">Daily average chart, %1$d day</item>
+        <item quantity="other">Daily average chart, %1$d days</item>
+    </plurals>
+    <string name="history_filtered_empty">No results on this network type yet.</string>
+    <string name="detail_title">Result</string>
+    <string name="detail_share">Share</string>
+    <string name="detail_not_found">This result was deleted.</string>
+    <string name="detail_latency_rise">Latency rose by %1$s ms under load.</string>
+    <string name="detail_latency_stable">Latency stayed within %1$s ms of idle under load.</string>
+    <string name="detail_no_loaded_latency">Latency under load wasn\'t measured for this result.</string>
+    <string name="detail_no_trace">The speed chart is available for results measured from version 1.4.0.</string>
+    <string name="share_chooser">Share result</string>
+    <string name="share_failed">Couldn\'t create the image. Try again.</string>
+    <string name="share_footer">Measured with Netra</string>
+    <string name="cd_open_result">Open result from %1$s</string>
 </resources>

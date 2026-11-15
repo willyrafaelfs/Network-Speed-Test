@@ -25,6 +25,8 @@ style:
     excludes: ['**/test/**', '**/ui/theme/**']
     # Nilai yang sudah diberi nama lewat deklarasi property bukan lagi "magic".
     ignorePropertyDeclaration: true
+    # Argumen entri enum (mis. breakpoint skala dial) adalah data bernama, bukan magic number.
+    ignoreEnums: true
   UnusedPrivateMember:
     # Fungsi @Preview memang tidak dipanggil dari kode.
     ignoreAnnotated: ['Preview']

@@ -31,10 +31,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.window.core.layout.WindowSizeClass
 import io.github.willyrafaelfs.speedtest.R
+import io.github.willyrafaelfs.speedtest.presentation.detail.ResultDetailScreen
 import io.github.willyrafaelfs.speedtest.presentation.history.HistoryScreen
+import io.github.willyrafaelfs.speedtest.presentation.settings.SettingsScreen
 import io.github.willyrafaelfs.speedtest.presentation.speedtest.SpeedTestScreen
 import kotlin.reflect.KClass
 import kotlinx.serialization.Serializable
@@ -43,8 +46,19 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object TestRoute
 
+/** Graph tab Riwayat: daftar riwayat lalu detail satu hasil. */
+@Serializable
+data object HistoryGraph
+
 @Serializable
 data object HistoryRoute
+
+/** Detail satu hasil; [id] adalah argumen yang tipenya dicek compiler. */
+@Serializable
+data class ResultDetailRoute(val id: Long)
+
+@Serializable
+data object SettingsRoute
 
 /** Tujuan level teratas yang tampil di bottom bar / navigation rail. */
 enum class TopLevelDestination(
@@ -54,7 +68,8 @@ enum class TopLevelDestination(
     @DrawableRes val icon: Int,
 ) {
     TEST(TestRoute, TestRoute::class, R.string.nav_test, R.drawable.ic_nav_test),
-    HISTORY(HistoryRoute, HistoryRoute::class, R.string.nav_history, R.drawable.ic_nav_history),
+    HISTORY(HistoryGraph, HistoryGraph::class, R.string.nav_history, R.drawable.ic_nav_history),
+    SETTINGS(SettingsRoute, SettingsRoute::class, R.string.nav_settings, R.drawable.ic_nav_settings),
 }
 
 /**
@@ -105,9 +120,18 @@ fun NetraApp(modifier: Modifier = Modifier, navController: NavHostController = r
                 modifier = Modifier.padding(innerPadding),
             ) {
                 composable<TestRoute> { SpeedTestScreen(snackbarHostState = snackbarHostState) }
-                composable<HistoryRoute> {
-                    HistoryScreen(onStartTest = { navController.navigateToTopLevel(TopLevelDestination.TEST) })
+                navigation<HistoryGraph>(startDestination = HistoryRoute) {
+                    composable<HistoryRoute> {
+                        HistoryScreen(
+                            onStartTest = { navController.navigateToTopLevel(TopLevelDestination.TEST) },
+                            onOpenResult = { id -> navController.navigate(ResultDetailRoute(id)) },
+                        )
+                    }
+                    composable<ResultDetailRoute> {
+                        ResultDetailScreen(onBack = navController::navigateUp, snackbarHostState = snackbarHostState)
+                    }
                 }
+                composable<SettingsRoute> { SettingsScreen() }
             }
         }
     }
