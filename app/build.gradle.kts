@@ -71,6 +71,11 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
+    // lifecycle-viewmodel-compose membawa kotlinx-serialization 1.7.3, sedangkan room-migration
+    // (lewat room-testing) dikompilasi untuk 1.8.x. AGP mengunci versi di APK test ke versi APK
+    // aplikasi, jadi versi aplikasi diselaraskan agar test migrasi tidak gagal (AbstractMethodError).
+    implementation(platform(libs.kotlinx.serialization.bom))
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
