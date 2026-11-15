@@ -91,6 +91,8 @@ dependencies {
     // Unit test
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    // Server HTTP lokal untuk menguji engine download/upload/ping tanpa internet.
+    testImplementation(libs.okhttp.mockwebserver)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
